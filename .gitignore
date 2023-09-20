@@ -12,6 +12,7 @@ users
 *.sublime-workspace
 *.xlsx
 *.png
+*.pdf
 *.dta
 *.log
 ga_config.json
