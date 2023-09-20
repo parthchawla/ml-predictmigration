@@ -15,6 +15,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import GridSearchCV
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.pipeline import Pipeline
+from collections import Counter
 
 path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
@@ -86,6 +90,18 @@ y_train = y_train.fillna(0)
 x_test = x_test.fillna(0)
 y_test = y_test.fillna(0)
 
+# Summarize class distribution in training data:
+counter = Counter(y_train['work_us'])
+print(counter)
+
+# Transform the dataset using SMOTE:
+oversample = SMOTE()
+x_train, y_train = oversample.fit_resample(x_train, y_train)
+
+# Summarize class distribution after transformation:
+counter = Counter(y_train['work_us'])
+print(counter)
+
 # Hyperparameter tuning for Gradient Booster:
 # gbc = GradientBoostingClassifier()
 # parameters = {
@@ -99,7 +115,7 @@ y_test = y_test.fillna(0)
 # Best parameters are: {'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 50}
 
 # Train the AI model on the training set:
-# model = LogisticRegression(max_iter=10000, random_state=16)
+#model = LogisticRegression(max_iter=10000, random_state=16)
 model = GradientBoostingClassifier(learning_rate=0.1, max_depth=3, n_estimators=50, random_state=16)
 model.fit(x_train, y_train.values.ravel())
 
