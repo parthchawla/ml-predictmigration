@@ -1,0 +1,21 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+
+# Create a matrix with 1000 observations and 7 variables--I think here is where you read in the data file, saving it in a data frame called "data". What follows seems to generate the matrix artificially.
+data = np.random.rand(1000, 7)
+
+# Split the data into a training set and a test set
+training_set, test_set = train_test_split(data, test_size=0.2)
+
+# Train the AI model on the training set
+model = LogisticRegression()
+model.fit(training_set[:, 2:], training_set[:, 1])
+
+# Evaluate the AI model on the test set
+predictions = model.predict_proba(test_set[:, 2:])
+
+# Calculate the accuracy of the model
+accuracy = np.mean(predictions[:, 1] >= 0.5)
+
+print("Accuracy:", accuracy)
