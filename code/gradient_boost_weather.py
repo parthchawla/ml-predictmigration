@@ -111,25 +111,21 @@ counter = Counter(y_train['work_us'])
 print(counter)
 
 # Hyperparameter tuning for Gradient Booster:
-gbc = GradientBoostingClassifier()
-parameters = {
-    "n_estimators":[50,100,250],
-    "max_depth":[1,3,5],
-    "learning_rate":[0.01,0.1,1]
-}
-cv = GridSearchCV(gbc,parameters,cv=2)
-cv.fit(x_train, y_train.values.ravel())
-print(f'Best parameters are: {results.best_params_}')
-exit()
+# gbc = GradientBoostingClassifier()
+# parameters = {
+#     "n_estimators":[50,100,250],
+#     "max_depth":[1,3,5],
+#     "learning_rate":[0.01,0.1,1]
+# }
+# cv = GridSearchCV(gbc,parameters,cv=2)
+# cv.fit(x_train, y_train.values.ravel())
+# print(f'Best parameters are: {results.best_params_}')
+# exit()
 # Best parameters are: {'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 50}
 
 # Train the AI model on the training set:
-#model = LogisticRegression(max_iter=10000, random_state=16)
 model = GradientBoostingClassifier(learning_rate=0.1, max_depth=3, n_estimators=50, random_state=16)
 model.fit(x_train, y_train.values.ravel())
-
-# coefs = pd.concat([pd.DataFrame(x_train.columns),pd.DataFrame(np.transpose(model.coef_))], axis = 1)
-# coefs.to_csv('output/coefs.csv')
 
 # Evaluate the AI model on the test set:
 y_pred = model.predict(x_test)
@@ -143,7 +139,7 @@ cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
 
 # Write to txt:
 cm = np.array2string(cnf_matrix)
-f = open('output/report.txt', 'w')
+f = open('output/report_gradboost_weather.txt', 'w')
 f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
 f.close()
 
@@ -159,4 +155,4 @@ plt.tight_layout()
 plt.title('Confusion matrix', y=1.1)
 plt.ylabel('Actual')
 plt.xlabel('Predicted')
-plt.savefig('output/confusion_matrix.png', bbox_inches='tight')
+plt.savefig('output/confusion_matrix_gradboost_weather.png', bbox_inches='tight')

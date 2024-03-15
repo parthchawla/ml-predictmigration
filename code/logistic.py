@@ -5,6 +5,7 @@
 ####################################################################################################
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split # scikit-learn package
@@ -23,6 +24,9 @@ from collections import Counter
 path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
 
+file = open("output/log_logistic.txt", 'w')
+sys.stdout = file
+
 dtafile = 'data/MexMigData.dta'
 data, meta = pyreadstat.read_dta(dtafile)
 
@@ -33,6 +37,7 @@ data = data.sort_values(by=['ind', 'year'], ascending=[True, True]) # sort
 data['work_in_mx'] = np.where((data['work_loc']==1) | (data['work_mx']==1), 1, 0) # worked in mx in year t
 data['yrs_worked_in_mx_cum'] = data.groupby(['ind'])['work_in_mx'].cumsum() # years worked in mx till t
 print(data.head())
+data.to_csv('output/data_logistic.csv')
 
 # We want training and testing data to not have the same people
 
@@ -78,6 +83,10 @@ x_train = x.loc[x['MODELING_GROUP'] == 'TRAINING']
 y_train = y.loc[y['MODELING_GROUP'] == 'TRAINING']
 x_test = x.loc[x['MODELING_GROUP'] == 'TESTING']
 y_test = y.loc[y['MODELING_GROUP'] == 'TESTING']
+print(x_train)
+print(y_train)
+print(x_test)
+print(y_test)
 
 x_train = x_train.drop('MODELING_GROUP', axis=1)
 y_train = y_train.drop('MODELING_GROUP', axis=1)
@@ -95,7 +104,7 @@ model = LogisticRegression(max_iter=10000, random_state=16)
 model.fit(x_train, y_train.values.ravel())
 
 coefs = pd.concat([pd.DataFrame(x_train.columns),pd.DataFrame(np.transpose(model.coef_))], axis = 1)
-coefs.to_csv('output/coefs.csv')
+coefs.to_csv('output/coefs_logistic.csv')
 
 # Evaluate the AI model on the test set:
 y_pred = model.predict(x_test)
@@ -109,7 +118,7 @@ cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
 
 # Write to txt:
 cm = np.array2string(cnf_matrix)
-f = open('output/report.txt', 'w')
+f = open('output/report_logistic.txt', 'w')
 f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
 f.close()
 
@@ -125,4 +134,6 @@ plt.tight_layout()
 plt.title('Confusion matrix', y=1.1)
 plt.ylabel('Actual')
 plt.xlabel('Predicted')
-plt.savefig('output/confusion_matrix.png', bbox_inches='tight')
+plt.savefig('output/confusion_matrix_logistic.png', bbox_inches='tight')
+
+file.close()

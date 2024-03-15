@@ -40,6 +40,7 @@ data['l2_local_nonag'] = data['local_nonag'].shift(2)
 data['l3_local_nonag'] = data['local_nonag'].shift(3)
 
 print(data.head())
+data.to_csv('output/data_logistic_weather.csv')
 
 # We want training and testing data to not have the same people
 
@@ -103,7 +104,7 @@ model = LogisticRegression(max_iter=10000, random_state=16)
 model.fit(x_train, y_train.values.ravel())
 
 coefs = pd.concat([pd.DataFrame(x_train.columns),pd.DataFrame(np.transpose(model.coef_))], axis = 1)
-coefs.to_csv('output/coefs_weather.csv')
+coefs.to_csv('output/coefs_logistic_weather.csv')
 
 # Evaluate the AI model on the test set:
 y_pred = model.predict(x_test)
@@ -117,7 +118,7 @@ cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
 
 # Write to txt:
 cm = np.array2string(cnf_matrix)
-f = open('output/report.txt', 'w')
+f = open('output/report_logistic_weather.txt', 'w')
 f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
 f.close()
 
@@ -133,4 +134,4 @@ plt.tight_layout()
 plt.title('Confusion matrix', y=1.1)
 plt.ylabel('Actual')
 plt.xlabel('Predicted')
-plt.savefig('output/confusion_matrix.png', bbox_inches='tight')
+plt.savefig('output/confusion_matrix_logistic_weather.png', bbox_inches='tight')
