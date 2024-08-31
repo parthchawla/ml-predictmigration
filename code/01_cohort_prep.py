@@ -87,4 +87,10 @@ vill_dummies = pd.get_dummies(df['villageid'], drop_first=True, prefix="vill", d
 df = pd.concat([df, vill_dummies], axis=1)
 vill_cols = [col for col in df if col.startswith('vill_')]
 
+df['L1_work_us'] = df.groupby('ind')['work_us'].shift(1)
+df['L1_work_mx'] = df.groupby('ind')['work_in_mx'].shift(1)
+df['L1_ag'] = df.groupby('ind')['ag'].shift(1)
+df['L1_nonag'] = df.groupby('ind')['nonag'].shift(1)
+
 print(df.head())
+df.to_csv('data/data_cohort_analysis.csv', index=False)
