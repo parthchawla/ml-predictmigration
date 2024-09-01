@@ -25,22 +25,18 @@ path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
 
 def assign_cohort(year):
-    if 1980 <= year <= 1984:
-        return "1980-1984"
-    elif 1985 <= year <= 1989:
-        return "1985-1989"
-    elif 1990 <= year <= 1994:
-        return "1990-1994"
-    elif 1995 <= year <= 1999:
-        return "1995-1999"
-    elif 2000 <= year <= 2004:
-        return "2000-2004"
-    elif 2005 <= year <= 2009:
-        return "2005-2009"
-    # elif 2010 <= year <= 2014:
-    #     return "2010-2014"
-    elif 2010:
-        return "2010"
+    if 1980 <= year <= 1987:
+        return "1980-1989 Pre-Period"
+    elif 1988 <= year <= 1989:
+        return "1980-1989 Outcome Period"
+    elif 1990 <= year <= 1997:
+        return "1990-1999 Pre-Period"
+    elif 1998 <= year <= 1999:
+        return "1990-1999 Outcome Period"
+    elif 2000 <= year <= 2008:
+        return "2000-2010 Pre-Period"
+    elif 2009 <= year <= 2010:
+        return "2000-2010 Outcome Period"
     else:
         return "Outside Range"
 
@@ -85,7 +81,6 @@ print(cohort_counts)
 # Create village dummies:
 vill_dummies = pd.get_dummies(df['villageid'], drop_first=True, prefix="vill", dtype=int)
 df = pd.concat([df, vill_dummies], axis=1)
-vill_cols = [col for col in df if col.startswith('vill_')]
 
 df['L1_work_us'] = df.groupby('ind')['work_us'].shift(1)
 df['L1_work_mx'] = df.groupby('ind')['work_in_mx'].shift(1)
