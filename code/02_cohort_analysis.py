@@ -17,10 +17,12 @@ import seaborn as sns
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.pipeline import Pipeline
 from collections import Counter
+import lightgbm as lgb
 
 path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
@@ -42,35 +44,42 @@ vill_cols = [col for col in df if col.startswith('vill_')]
 pre_periods = ['1980-1989 Pre-Period', '1990-1999 Pre-Period', '2000-2010 Pre-Period']
 outcome_periods = ['1980-1989 Outcome Period', '1990-1999 Outcome Period', '2000-2010 Outcome Period']
 
-# Split the data into pre-period and outcome period data
-pre_data = df[df['cohort'].isin(pre_periods)]
-outcome_data = df[df['cohort'].isin(outcome_periods)]
+# Initialize variables to store the best model and its parameters
+best_precision = 0
+best_params = None
+best_model = None
 
-# Example: Training on the first cohort's pre-period and testing on its outcome period
-train_data = pre_data[pre_data['cohort'] == '1980-1989 Pre-Period']
-test_data = outcome_data[outcome_data['cohort'] == '1980-1989 Outcome Period']
+# Define the hyperparameter space for random search
+param_space = {
+    'num_leaves': np.random.randint(20, 100, size=100),  # Max number of leaves in one tree
+    'min_data_in_leaf': np.random.randint(10, 100, size=100),  # Min samples required in a leaf
+    'learning_rate': np.random.uniform(0.01, 0.3, size=100),  # Step size for each boosting step
+    'feature_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of features used per tree
+    'bagging_fraction': np.random.uniform(0.5, 1.0, size=100)  # Fraction of data used per iteration
+}
 
-# Create x and y variables:
-x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 'ag', 'nonag', 
-           'yrs_in_mx_cum', 'yrs_in_us_cum', 'yrs_in_ag_cum', 'yrs_in_nonag_cum', 
-           'yrs_in_mx_ag_sal_cum', 'yrs_in_mx_nonag_sal_cum', 'yrs_in_mx_ag_own_cum', 
-           'yrs_in_mx_nonag_own_cum', 'yrs_in_us_ag_sal_cum', 'yrs_in_us_nonag_sal_cum', 
-           'yrs_in_us_ag_own_cum', 'yrs_in_us_nonag_own_cum',
-           'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag']
-x_cols = x_cols1 + vill_cols
-y_cols = ['work_us']
+# # Split the data into pre-period and outcome period data
+# pre_data = df[df['cohort'].isin(pre_periods)]
+# outcome_data = df[df['cohort'].isin(outcome_periods)]
 
-x_train = train_data[x_cols]
-y_train = train_data[y_cols]
-x_test = test_data[x_cols]
-y_test = test_data[y_cols]
-# print("x_train:", x_train)
-# print("y_train:", y_train)
-# print("x_test:", x_test)
-# print("y_test:", y_test)
+# # Example: Training on the first cohort's pre-period and testing on its outcome period
+# train_data = pre_data[pre_data['cohort'] == '1980-1989 Pre-Period']
+# test_data = outcome_data[outcome_data['cohort'] == '1980-1989 Outcome Period']
 
-counter = Counter(y_train['work_us'])
-print(counter)
+# # Create x and y variables:
+# x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 'ag', 'nonag', 
+#            'yrs_in_mx_cum', 'yrs_in_us_cum', 'yrs_in_ag_cum', 'yrs_in_nonag_cum', 
+#            'yrs_in_mx_ag_sal_cum', 'yrs_in_mx_nonag_sal_cum', 'yrs_in_mx_ag_own_cum', 
+#            'yrs_in_mx_nonag_own_cum', 'yrs_in_us_ag_sal_cum', 'yrs_in_us_nonag_sal_cum', 
+#            'yrs_in_us_ag_own_cum', 'yrs_in_us_nonag_own_cum',
+#            'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag']
+# x_cols = x_cols1 + vill_cols
+# y_cols = ['work_us']
+
+# x_train = train_data[x_cols]
+# y_train = train_data[y_cols]
+# x_test = test_data[x_cols]
+# y_test = test_data[y_cols]
 
 # Hyperparameter tuning for Gradient Booster:
 # gbc = GradientBoostingClassifier()
@@ -84,12 +93,70 @@ print(counter)
 # print(f'Best parameters are: {results.best_params_}')
 # Best parameters are: {'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 50}
 
+# Create x and y variables:
+x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 'ag', 'nonag', 
+           'yrs_in_mx_cum', 'yrs_in_us_cum', 'yrs_in_ag_cum', 'yrs_in_nonag_cum', 
+           'yrs_in_mx_ag_sal_cum', 'yrs_in_mx_nonag_sal_cum', 'yrs_in_mx_ag_own_cum', 
+           'yrs_in_mx_nonag_own_cum', 'yrs_in_us_ag_sal_cum', 'yrs_in_us_nonag_sal_cum', 
+           'yrs_in_us_ag_own_cum', 'yrs_in_us_nonag_own_cum',
+           'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag']
+x_cols = x_cols1 + vill_cols
+y_cols = ['work_us']
+
+# Define training data (from the pre-period of the current cohort)
+train_data = df[df['cohort'] == pre_periods[0]]
+X_train = train_data[x_cols]
+y_train = train_data[y_cols]
+
+# Define validation data (from the outcome period of the next cohort)
+validate_data = df[df['cohort'] == outcome_periods[0]]
+X_validate = validate_data[x_cols]
+y_validate = validate_data[y_cols]
+
+# Perform random search over 100 hyperparameter configurations
+for j in range(100):
+    # Sample a unique set of hyperparameters
+    params = {
+        'objective': 'binary',  # Binary classification objective
+        'num_leaves': param_space['num_leaves'][j],
+        'min_data_in_leaf': param_space['min_data_in_leaf'][j],
+        'learning_rate': param_space['learning_rate'][j],
+        'feature_fraction': param_space['feature_fraction'][j],
+        'bagging_fraction': param_space['bagging_fraction'][j],
+        'metric': 'binary_logloss',  # Use log loss as the evaluation metric
+        'verbose': -1  # Suppress all LightGBM output
+    }
+    
+    # Create LightGBM datasets for training and validation
+    d_train = lgb.Dataset(X_train, label=y_train)
+    d_validate = lgb.Dataset(X_validate, label=y_validate, reference=d_train)
+    
+    # Train the model with early stopping
+    model = lgb.train(
+        params,
+        d_train,
+        valid_sets=[d_validate],
+        num_boost_round=1000,  # Maximum number of boosting rounds
+        callbacks=[lgb.early_stopping(stopping_rounds=50)]  # Early stopping callback, stop if no improvement for 50 rounds
+    )
+    
+    # Predict on the validation set and calculate precision
+    y_validate_pred = model.predict(X_validate, num_iteration=model.best_iteration)
+    precision = precision_score(y_validate, y_validate_pred.round())
+    
+    # Update the best model if the current one has higher precision
+    if precision > best_precision:
+        best_precision = precision
+        best_params = params
+        best_model = model
+
+# Print the best hyperparameters and the corresponding precision
+print(f"Best Precision: {best_precision}")
+print(f"Best Parameters: {best_params}")
+
 exit()
 
-
-
-
-GPT:
+## GPT:
 import lightgbm as lgb
 import numpy as np
 from sklearn.metrics import precision_score
