@@ -25,18 +25,30 @@ path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
 
 def assign_cohort(year):
-    if 1980 <= year <= 1987:
-        return "1980-1989 Pre-Period"
-    elif 1988 <= year <= 1989:
-        return "1980-1989 Outcome Period"
-    elif 1990 <= year <= 1997:
-        return "1990-1999 Pre-Period"
-    elif 1998 <= year <= 1999:
-        return "1990-1999 Outcome Period"
-    elif 2000 <= year <= 2008:
-        return "2000-2010 Pre-Period"
-    elif 2009 <= year <= 2010:
-        return "2000-2010 Outcome Period"
+    if 1980 <= year <= 1983:
+        return "1980-1984 Pre-Period"
+    elif year == 1984:
+        return "1980-1984 Outcome Period"
+    elif 1985 <= year <= 1988:
+        return "1985-1989 Pre-Period"
+    elif year == 1989:
+        return "1985-1989 Outcome Period"
+    elif 1990 <= year <= 1993:
+        return "1990-1994 Pre-Period"
+    elif year == 1994:
+        return "1990-1994 Outcome Period"
+    elif 1995 <= year <= 1998:
+        return "1995-1999 Pre-Period"
+    elif year == 1999:
+        return "1995-1999 Outcome Period"
+    elif 2000 <= year <= 2003:
+        return "2000-2004 Pre-Period"
+    elif year == 2004:
+        return "2000-2004 Outcome Period"
+    elif 2005 <= year <= 2009:
+        return "2005-2010 Pre-Period"  # Pre-period includes 2005-2009
+    elif year == 2010:
+        return "2005-2010 Outcome Period"  # 2010 as outcome period
     else:
         return "Outside Range"
 
@@ -86,6 +98,10 @@ df['L1_work_us'] = df.groupby('ind')['work_us'].shift(1)
 df['L1_work_mx'] = df.groupby('ind')['work_in_mx'].shift(1)
 df['L1_ag'] = df.groupby('ind')['ag'].shift(1)
 df['L1_nonag'] = df.groupby('ind')['nonag'].shift(1)
+
+# Move 'cohort' to the first column
+cols = ['cohort'] + [col for col in df.columns if col != 'cohort']
+df = df[cols]
 
 print(df.head())
 df.to_csv('data/data_cohort_analysis.csv', index=False)
