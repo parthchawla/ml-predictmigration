@@ -10,6 +10,17 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import precision_score
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn import metrics
+import seaborn as sns
+import matplotlib.pyplot as plt
+import random
+
+# Set a random seed for reproducibility
+SEED = 42
+np.random.seed(SEED)   # Set seed for NumPy
+random.seed(SEED)      # Set seed for Python's random module
+lgb_params = {'seed': SEED}  # Use seed in LightGBM parameters
 
 path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
@@ -61,9 +72,6 @@ for i in range(len(pre_periods)):
     X_train = train_data[x_cols]  # Features
     y_train = train_data[y_cols]  # Target
 
-    # Print the head of the training data
-    print("\nTraining Data Head:")
-    print(train_data.head())
     print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
 
     # Define validation data (from the outcome period of the next cohort)
@@ -73,13 +81,10 @@ for i in range(len(pre_periods)):
 
     y_validate = y_validate.fillna(0)  # Fill NaNs with 0
 
-    # Print the head of the validation data
-    print("\nValidation Data Head:")
-    print(validate_data.head())
     print(f"X_validate shape: {X_validate.shape}, y_validate shape: {y_validate.shape}")
 
     # Perform random search over 100 hyperparameter configurations
-    for j in range(2):
+    for j in range(100):
         if j % 10 == 0:  # Print progress every 10 iterations
             print(f"Hyperparameter configuration {j+1}/100")
 
@@ -92,7 +97,8 @@ for i in range(len(pre_periods)):
             'feature_fraction': param_space['feature_fraction'][j],
             'bagging_fraction': param_space['bagging_fraction'][j],
             'metric': 'binary_logloss',  # Use log loss as the evaluation metric
-            'verbose': -1  # Suppress all LightGBM output
+            'verbose': -1,  # Suppress all LightGBM output
+            'seed': SEED  # Ensure consistent LightGBM results
         }
         
         # Create LightGBM datasets for training and validation
@@ -132,8 +138,6 @@ y_combined = final_train_data[y_cols]  # Target
 # Print cohorts included in X_combined and y_combined
 print(f"\nCohorts included in X_combined and y_combined: {final_train_data['cohort'].unique()}")
 print(f"X_combined shape: {X_combined.shape}, y_combined shape: {y_combined.shape}")
-print("\nCombined Training Data Head:")
-print(final_train_data.head())
 
 # Create a dataset for final training
 d_combined = lgb.Dataset(X_combined, label=y_combined)
@@ -150,10 +154,42 @@ y_test = y_validate.fillna(0)  # Fill NaNs with 0
 # Print cohorts included in X_test and y_test
 print(f"\nCohorts included in X_test and y_test: {test_data['cohort'].unique()}")
 print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-print("\nTest Data Head:")
-print(test_data.head())
 
-# Predict on the test set and calculate precision
+# Predict on the test set
 y_test_pred = final_model.predict(X_test)
-test_precision = precision_score(y_test, y_test_pred.round())
-print(f'Test Precision: {test_precision}')
+y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to binary (0 or 1)
+
+# Calculate precision, recall, and F1 score
+precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred_binary, average='binary')
+
+# Print the metrics
+print(f'Test Precision: {precision}')
+print(f'Test Recall: {recall}')
+print(f'Test F1 Score: {f1}')
+
+# Create classification report:
+target_names = ["Didn't work in the US", "Worked in the US"]
+cr = metrics.classification_report(y_test, y_test_pred_binary, target_names=target_names)
+
+# Create confusion matrix:
+cnf_matrix = metrics.confusion_matrix(y_test, y_test_pred_binary)
+
+# Write classification report and confusion matrix to txt:
+cm = np.array2string(cnf_matrix)
+with open('output/report_lightgbm.txt', 'w') as f:
+    f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
+
+# Create heatmap for the confusion matrix:
+class_names = [0, 1]  # 0 for "Didn't work in the US", 1 for "Worked in the US"
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+sns.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu", fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+plt.title('Confusion matrix', y=1.1)
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.savefig('output/confusion_matrix_lightgbm.png', bbox_inches='tight')
+plt.show()

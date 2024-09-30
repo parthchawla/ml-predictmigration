@@ -1,0 +1,16 @@
+Classification Report
+
+                       precision    recall  f1-score   support
+
+Didn't work in the US       1.00      1.00      1.00      5647
+     Worked in the US       0.94      0.98      0.96       344
+
+             accuracy                           1.00      5991
+            macro avg       0.97      0.99      0.98      5991
+         weighted avg       1.00      1.00      1.00      5991
+
+
+Confusion Matrix
+
+[[5627   20]
+ [   6  338]]
