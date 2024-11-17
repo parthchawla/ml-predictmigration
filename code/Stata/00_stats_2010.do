@@ -1,4 +1,3 @@
-
 * ------------------------------------------------------------------------------
 /*
 *        Created by: Parth Chawla
@@ -13,7 +12,6 @@ macro drop _all
 if inlist("`c(username)'","parthchawla1") global path ///
 "/Users/parthchawla1/GitHub/ml-predictmigration"
 else global path ""
-
 cd "$path"
 global data "data"
 global output "output"
