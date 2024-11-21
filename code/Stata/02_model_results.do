@@ -4,10 +4,9 @@
 *        Created on: Sep 30, 2024
 */
 * ------------------------------------------------------------------------------
-
+cls
 clear all
 macro drop _all
-
 if inlist("`c(username)'","parthchawla1") global path ///
 "/Users/parthchawla1/GitHub/ml-predictmigration"
 else global path ""
@@ -30,7 +29,7 @@ tab work_us
 
 gen correct_migrant = (correct_prediction==1 & work_us==1)
 tab correct_migrant
-* 338/344 migrants correctly predicted, 6 incorrect
+* 341/344 migrants correctly predicted, 3 incorrect
 
 gen stayed_migrant = (work_us==1 & l1_work_us==1)
 tab stayed_migrant
@@ -42,11 +41,11 @@ tab new_migrant
 
 gen correct_stayed_migrant = (correct_migrant==1 & l1_work_us==1)
 tab correct_stayed_migrant
-* 327/328 of those who stayed migrant correctly predicted, 1 incorrect
+* 328/328 of those who stayed migrant correctly predicted, 1 incorrect
 
 gen correct_new_migrant = (correct_migrant==1 & l1_work_us==0)
 tab correct_new_migrant
-* 11/16 of new migrants correctly predicted, 5 incorrect
+* 13/16 of new migrants correctly predicted, 5 incorrect
 
 ////////////////////////////////////////////////////////////////////////////////
 * Non-migrants
@@ -57,7 +56,7 @@ tab work_us
 
 gen correct_nonmigrant = (correct_prediction==1 & work_us==0)
 tab correct_nonmigrant
-* 5,625/5,645 nonmigrants correctly predicted, 20 incorrect
+* 5,612/5,645 nonmigrants correctly predicted, 33 incorrect
 
 gen stayed_nonmigrant = (work_us==0 & l1_work_us==0)
 tab stayed_nonmigrant
@@ -69,7 +68,7 @@ tab new_nonmigrant
 
 gen correct_stayed_nonmigrant = (correct_nonmigrant==1 & l1_work_us==0)
 tab correct_stayed_nonmigrant
-* 5,608/5,616 of those who stayed nonmigrant correctly predicted, 8 incorrect
+* 5,595/5,616 of those who stayed nonmigrant correctly predicted, 21 incorrect
 
 gen correct_new_nonmigrant = (correct_nonmigrant==1 & l1_work_us==1)
 tab correct_new_nonmigrant
