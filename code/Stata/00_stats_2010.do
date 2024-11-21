@@ -89,5 +89,5 @@ label values transition trans
 tabulate transition
 
 * Calculate transition probabilities
-tabulate work_us2009 work_us2010, row nofreq
+tabulate work_us2009 work_us2010, row
 

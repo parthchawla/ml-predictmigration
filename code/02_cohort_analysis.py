@@ -15,6 +15,7 @@ from sklearn import metrics
 import seaborn as sns
 import matplotlib.pyplot as plt
 import random
+import shap
 
 # Set a random seed for reproducibility
 SEED = 42
@@ -51,13 +52,16 @@ best_precision = 0
 best_params = None
 best_model = None
 
+# Calculate the class imbalance ratio
+pos_weight = len(df[df['work_us'] == 0]) / len(df[df['work_us'] == 1])
+
 # Define the hyperparameter space for random search
 param_space = {
-    'num_leaves': np.random.randint(20, 100, size=100),  # Max number of leaves in one tree
+    'num_leaves': np.random.randint(20, 150, size=100),  # Max number of leaves in one tree
     'min_data_in_leaf': np.random.randint(10, 100, size=100),  # Min samples required in a leaf
-    'learning_rate': np.random.uniform(0.01, 0.3, size=100),  # Step size for each boosting step
-    'feature_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of features used per tree
-    'bagging_fraction': np.random.uniform(0.5, 1.0, size=100)  # Fraction of data used per iteration
+    'learning_rate': np.random.uniform(0.01, 0.1, size=100),  # Step size for each boosting step
+    'feature_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of features used per tree
+    'bagging_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of data used per iteration
 }
 
 # Print start of the process
@@ -97,6 +101,7 @@ for i in range(len(pre_periods)):
             'feature_fraction': param_space['feature_fraction'][j],
             'bagging_fraction': param_space['bagging_fraction'][j],
             'metric': 'binary_logloss',  # Use log loss as the evaluation metric
+            'scale_pos_weight': pos_weight,  # Account for class imbalance
             'verbose': -1,  # Suppress all LightGBM output
             'seed': SEED  # Ensure consistent LightGBM results
         }
@@ -143,6 +148,21 @@ print(f"X_combined shape: {X_combined.shape}, y_combined shape: {y_combined.shap
 d_combined = lgb.Dataset(X_combined, label=y_combined)
 final_model = lgb.train(best_params, d_combined, num_boost_round=best_model.best_iteration)
 
+# Calculate feature importance
+importance_df = pd.DataFrame({
+    'feature': x_cols,
+    'importance': final_model.feature_importance(importance_type='gain')
+})
+importance_df = importance_df.sort_values('importance', ascending=False)
+
+# Save feature importance plot
+plt.figure(figsize=(12, 6))
+sns.barplot(data=importance_df.head(20), x='importance', y='feature')
+plt.title('Top 20 Most Important Features')
+plt.tight_layout()
+plt.savefig('output/feature_importance.png')
+plt.close()
+
 # Evaluate the final model on the test cohort (last cohort's outcome period)
 print("\nEvaluating the final model on the test cohort...")
 test_data = df[df['cohort'] == outcome_periods[-1]]
@@ -159,6 +179,12 @@ print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
 y_test_pred = final_model.predict(X_test)
 y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to binary (0 or 1)
 
+# Add actual and predicted values to the test dataset
+test_data['actual_y'] = y_test.values  # Add the actual target values
+test_data['predicted_y'] = y_test_pred_binary  # Add the predicted binary values
+test_data['predicted_prob'] = y_test_pred  # Add the predicted probabilities
+test_data.to_csv('output/test_predictions_2010.csv', index=False)
+
 # Calculate precision, recall, and F1 score
 precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred_binary, average='binary')
 
@@ -166,6 +192,15 @@ precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred_b
 print(f'Test Precision: {precision}')
 print(f'Test Recall: {recall}')
 print(f'Test F1 Score: {f1}')
+
+# Generate and save SHAP values for interpretability
+explainer = shap.TreeExplainer(final_model)
+shap_values = explainer.shap_values(X_test)
+plt.figure(figsize=(10, 6))
+shap.summary_plot(shap_values, X_test, show=False)
+plt.tight_layout()
+plt.savefig('output/shap_summary.png')
+plt.close()
 
 # Create classification report:
 target_names = ["Didn't work in the US", "Worked in the US"]
