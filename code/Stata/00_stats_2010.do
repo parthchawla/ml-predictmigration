@@ -8,27 +8,24 @@
 cls
 clear all
 macro drop _all
-
 if inlist("`c(username)'","parthchawla1") global path ///
 "/Users/parthchawla1/GitHub/ml-predictmigration"
 else global path ""
 cd "$path"
 global data "data"
+global stats "stats"
 global output "output"
-
 use "$data/MexMigData.dta", clear
 
-egen id = group(id1s2 numc)
-order id year
-sort id year
+order ind year
+sort ind year
 
 * Create lag variables to check previous migration status
-by id: gen work_us_lag1 = work_us[_n-1] if year == 2010
-by id: gen work_us_lag2 = work_us[_n-2] if year == 2010
-by id: gen work_us_lag3 = work_us[_n-3] if year == 2010
-by id: gen work_us_lag4 = work_us[_n-4] if year == 2010
+by ind: gen work_us_lag1 = work_us[_n-1] if year == 2010
+by ind: gen work_us_lag2 = work_us[_n-2] if year == 2010
+by ind: gen work_us_lag3 = work_us[_n-3] if year == 2010
+by ind: gen work_us_lag4 = work_us[_n-4] if year == 2010
 
-* Focus on individuals in 2010
 keep if year == 2010
 
 * Total number of migrants in 2010
@@ -66,10 +63,9 @@ display "Percentage of 2010 migrants who also migrated in 2006: " round(`pct_200
 * Transition probabilities from 2009 to 2010
 use "$data/MexMigData.dta", clear
 keep if year == 2009 | year == 2010
-egen id = group(id1s2 numc)
-keep id year work_us
+keep ind year work_us
 
-reshape wide work_us, i(id) j(year)
+reshape winde work_us, i(ind) j(year)
 
 * Create transition categories
 gen transition = .
