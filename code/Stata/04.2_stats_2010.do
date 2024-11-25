@@ -100,20 +100,27 @@ tab us_experience_1980_2009 correct_new_migrant
 
 ////////////////////////////////////////////////////////////////////////////////
 
-keep if correct_new_migrant==1
-keep ind
-tempfile correct_new_migrant
-save `correct_new_migrant'
+keep if new_migrant==1
+keep ind correct_prediction
+tempfile new_migrant
+save `new_migrant'
 
 use "$data/MexMigData.dta", clear 
-merge m:1 ind using `correct_new_migrant'
+merge m:1 ind using `new_migrant'
 keep if _merge==3
-keep ind year work_us
+keep ind year work_us correct_prediction
 egen id = group(ind)
 
+tab id correct_prediction if year==2010
+label define id_lbl 1 "Correct" 2 "Correct" 3 "Correct" 4 "Incorrect" ///
+    5 "Correct" 6 "Correct" 7 "Correct" 8 "Correct" 9 "Correct" ///
+    10 "Incorrect" 11 "Correct" 12 "Correct" 13 "Correct" 14 "Correct" ///
+    15 "Correct" 16 "Correct"
+label values id id_lbl
+
 twoway (scatter work_us year, sort by(id, ///
-    title("Trajectories of New Migrants Correctly Predicted for 2010", size(medium)) ///
-	note("New migrants are the 16 individuals who worked in the US in 2010 but not in 2009. 328 individuals worked in the US in both 2009 and 2010.",size(vsmall)) ///
+    title("Trajectories of New Migrants in 2010: Correct and Incorrect Predictions", size(medium)) ///
+	note("New migrants are the 16 individuals in the sample who worked in the US in 2010 but not in 2009. 328 individuals worked in the US in both 2009 and 2010.",size(vsmall)) ///
 	caption("The ML model correctly predicted 14 of the 16 new migrants in 2010 and all 328 existing migrants.",size(vsmall)))), ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
     ytitle("Worked in...", size(small)) xtitle("")
