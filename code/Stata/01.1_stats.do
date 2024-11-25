@@ -123,5 +123,6 @@ restore
 		bar(3,color(eltblue)) bar(4,color(orange))
 
 graph combine g2 g1, ///
-title("Share of Migrant Types and Transitions Over Time", size(medium))
+title("Share of Migrant Types and Transitions Over Time", size(medium)) ///
+note("Long-term Migrant: More than 10 years in the US; Medium-term Migrant: 4 to 10 years in the US; Short-term Migrant: 1 to 3 years in the US.",size(vsmall))
 graph export "$stats/migration_shares.png", replace
