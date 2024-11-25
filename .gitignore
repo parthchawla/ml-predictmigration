@@ -18,3 +18,4 @@ ga_config.json
 venv
 .idea
 *.iml
+*.stswp
