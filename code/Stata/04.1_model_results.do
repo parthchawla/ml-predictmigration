@@ -15,7 +15,7 @@ global data "data"
 global stats "stats"
 global output "output"
 
-import delimited "$output/test_predictions_2010.csv", clear
+import delimited "$output/test_predictions_2010_add_vars.csv", clear
 gen correct_prediction = (actual_y==predicted_y)
 tab correct_prediction
 
@@ -28,7 +28,7 @@ tab work_us
 
 gen correct_migrant = (correct_prediction==1 & work_us==1)
 tab correct_migrant
-* 341/344 migrants correctly predicted, 3 incorrect
+* 342/344 migrants correctly predicted, 2 incorrect
 
 gen stayed_migrant = (work_us==1 & l1_work_us==1)
 tab stayed_migrant
@@ -44,7 +44,7 @@ tab correct_stayed_migrant
 
 gen correct_new_migrant = (correct_migrant==1 & l1_work_us==0)
 tab correct_new_migrant
-* 13/16 of new migrants correctly predicted, 3 incorrect
+* 14/16 of new migrants correctly predicted, 2 incorrect
 
 ////////////////////////////////////////////////////////////////////////////////
 * Non-migrants
@@ -55,7 +55,7 @@ tab work_us
 
 gen correct_nonmigrant = (correct_prediction==1 & work_us==0)
 tab correct_nonmigrant
-* 5,612/5,645 nonmigrants correctly predicted
+* 5,614/5,645 nonmigrants correctly predicted
 
 gen stayed_nonmigrant = (work_us==0 & l1_work_us==0)
 tab stayed_nonmigrant
@@ -67,7 +67,7 @@ tab new_nonmigrant
 
 gen correct_stayed_nonmigrant = (correct_nonmigrant==1 & l1_work_us==0)
 tab correct_stayed_nonmigrant
-* 5,595/5,616 of those who stayed nonmigrant correctly predicted
+* 5,597/5,616 of those who stayed nonmigrant correctly predicted
 
 gen correct_new_nonmigrant = (correct_nonmigrant==1 & l1_work_us==1)
 tab correct_new_nonmigrant
