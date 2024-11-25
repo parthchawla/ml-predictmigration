@@ -16,7 +16,6 @@ global stats "stats"
 global output "output"
 
 import delimited "$output/test_predictions_2010.csv", clear
-
 gen correct_prediction = (actual_y==predicted_y)
 tab correct_prediction
 
