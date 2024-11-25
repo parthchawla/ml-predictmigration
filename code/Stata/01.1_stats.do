@@ -72,9 +72,9 @@ tab transition year, row
 preserve
     collapse (mean) work_us, by(year)
     twoway (connected work_us year), ///
-        title("Share of Population in US Over Time", size(medium)) ///
-        yla(,labs(small)) xla(1980(10)2010, labs(small)) ///
-        ytitle("Share in US", size(small)) xtitle("")    
+        title("Share of Sample in the US Over Time", size(medium)) ///
+        yla(0(0.02)0.12,labs(small)) xla(1980(10)2010, labs(small)) ///
+        ytitle("Share in the US", size(small)) xtitle("")    
     graph export "$stats/migration_trend.png", replace
 restore
 
@@ -95,7 +95,7 @@ preserve
 	graph hbar (asis) share, name(g1) ///
 		over(transition,label(labs(vsmall)) sort(order)) over(year,label(labs(vsmall))) ///
 		title("Transitions", size(medium)) intensity(70) ///
-		ytitle("Share of Population", size(small)) ///
+		ytitle("Share of Sample", size(small)) ///
 		b1title(,size(small)) yla(,labs(small)) stack asyvars ///
 		legend(size(small) rows(2) pos(6)) ///
 		bar(1,color(dimgray)) bar(2,color(maroon)) bar(3,color(eltblue)) ///
@@ -116,7 +116,7 @@ restore
 	graph hbar (asis) share, name(g2) ///
 		over(migrant_type,label(labs(vsmall)) sort(order)) over(year,label(labs(vsmall))) ///
 		title("Types", size(medium)) intensity(70) ///
-		ytitle("Share of Population", size(small)) ///
+		ytitle("Share of Sample", size(small)) ///
 		b1title(,size(small)) yla(,labs(small)) stack asyvars ///
 		legend(size(small) rows(2) pos(6)) ///
 		bar(1,color(orange_red)) bar(2,color(dkorange)) ///
@@ -124,4 +124,4 @@ restore
 
 graph combine g2 g1, ///
 title("Share of Migrant Types and Transitions Over Time", size(medium))
-graph export "$stats/migrantion_shares.png", replace
+graph export "$stats/migration_shares.png", replace
