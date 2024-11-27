@@ -169,7 +169,7 @@ test_data = df[df['cohort'] == outcome_periods[-1]]
 X_test = test_data[x_cols]  # Features
 y_test = test_data[y_cols]  # Target
 
-y_test = y_validate.fillna(0)  # Fill NaNs with 0
+y_test = y_test.fillna(0)  # Fill NaNs with 0
 
 # Print cohorts included in X_test and y_test
 print(f"\nCohorts included in X_test and y_test: {test_data['cohort'].unique()}")
