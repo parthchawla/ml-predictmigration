@@ -114,7 +114,7 @@ import delimited "$output/test_predictions_2010_shocks.csv", clear
 
 collapse (sum) predicted_y_*
 
-label var predicted_y_original "Original Predictions"
+label var predicted_y_original "Original Prediction"
 label var predicted_y_eliminate_remittance "Eliminate Remittances"
 label var predicted_y_double_rem_us "Double US Remittances"
 label var predicted_y_halve_rem_us "Halve US Remittances"
