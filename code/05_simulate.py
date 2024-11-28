@@ -78,7 +78,20 @@ shocks = {
     "double_trans_inc": 2.0,
     "double_hhchildren": 2.0,
     "double_hhworkforce": 2.0,
+    "double_age": 2.0,
+    "halve_rem_us": 0.5,
+    "halve_ag_inc": 0.5,
+    "halve_farmlab_inc": 0.5,
+    "halve_nonag_inc": 0.5,
+    "halve_trans_inc": 0.5,
+    "halve_hhchildren": 0.5,
+    "halve_hhworkforce": 0.5,
+    "halve_age": 0.5,
     "no_L1_work_us": 0.0,
+    "no_ag": 0.0,
+    "no_L1_ag": 0.0,
+    "no_nonag": 0.0,
+    "no_L1_nonag": 0.0,
     "yes_L1_work_mx": 1.0
 }
 
@@ -93,6 +106,9 @@ for scenario, value in shocks.items():
     # Apply the shock to the relevant variable(s)
     if scenario.startswith("double_"):
         variable = scenario.replace("double_", "")  # Extract the variable name
+        X_test_shocked[variable] *= value  # Double the variable
+    elif scenario.startswith("halve_"):
+        variable = scenario.replace("halve_", "")  # Extract the variable name
         X_test_shocked[variable] *= value  # Double the variable
     elif scenario.startswith("no_"):
         variable = scenario.replace("no_", "")  # Extract the variable name

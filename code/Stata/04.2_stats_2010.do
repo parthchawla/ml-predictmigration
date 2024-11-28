@@ -118,9 +118,9 @@ label define id_lbl 1 "Correct" 2 "Correct" 3 "Correct" 4 "Incorrect" ///
     15 "Correct" 16 "Correct"
 label values id id_lbl
 
-gen highlight = (year==2010)
-// Replace actual y with the prediction:
+* Replace actual y with the prediction:
 replace work_us = predicted_y if year == 2010
+gen highlight = (year==2010)
 
 sepscatter work_us year, separate(highlight) sort by(id, ///
     title("Trajectories of 2010 New Migrants and Predictions", size(medium)) ///
