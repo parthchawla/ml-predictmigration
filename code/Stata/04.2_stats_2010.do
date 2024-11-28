@@ -66,7 +66,7 @@ tempfile pred
 save `pred'
 
 restore
-merge 1:1 ind using `pred', nogen keepusing(correct_prediction)
+merge 1:1 ind using `pred', nogen keepusing(correct_prediction predicted_y)
 
 gen correct_migrant = (correct_prediction==1 & work_us_2010==1)
 tab correct_migrant
@@ -101,14 +101,14 @@ tab us_experience_1980_2009 correct_new_migrant
 ////////////////////////////////////////////////////////////////////////////////
 
 keep if new_migrant==1
-keep ind correct_prediction
+keep ind correct_prediction predicted_y
 tempfile new_migrant
 save `new_migrant'
 
 use "$data/MexMigData.dta", clear 
 merge m:1 ind using `new_migrant'
 keep if _merge==3
-keep ind year work_us correct_prediction
+keep ind year work_us correct_prediction predicted_y
 egen id = group(ind)
 
 tab id correct_prediction if year==2010
@@ -118,10 +118,15 @@ label define id_lbl 1 "Correct" 2 "Correct" 3 "Correct" 4 "Incorrect" ///
     15 "Correct" 16 "Correct"
 label values id id_lbl
 
-twoway (scatter work_us year, sort by(id, ///
-    title("Trajectories of New Migrants in 2010: Correct and Incorrect Predictions", size(medium)) ///
+gen highlight = (year==2010)
+// Replace actual y with the prediction:
+replace work_us = predicted_y if year == 2010
+
+sepscatter work_us year, separate(highlight) sort by(id, ///
+    title("Trajectories of 2010 New Migrants and Predictions", size(medium)) ///
 	note("New migrants are the 16 individuals in the sample who worked in the US in 2010 but not in 2009. 328 individuals worked in the US in both 2009 and 2010.",size(vsmall)) ///
-	caption("The ML model correctly predicted 14 of the 16 new migrants in 2010 and all 328 existing migrants.",size(vsmall)))), ///
+	caption("The ML model correctly predicted 14 of the 16 new migrants in 2010 and all 328 existing migrants.",size(vsmall)) ///
+	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
     ytitle("Worked in...", size(small)) xtitle("")
-graph export "$stats/correct_new_migrants_2010.png", replace
+graph export "$stats/new_migrants_2010.png", replace
