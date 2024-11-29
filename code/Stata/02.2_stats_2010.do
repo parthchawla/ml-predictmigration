@@ -59,18 +59,19 @@ preserve
 * What did it get right
 ////////////////////////////////////////////////////////////////////////////////
 
-import delimited "$output/test_predictions_2010.csv", clear
+import delimited "$output/test_predictions_2010_add_vars1.csv", clear
 gen correct_prediction = (actual_y==predicted_y)
 tab correct_prediction
 tempfile pred
 save `pred'
 
 restore
-merge 1:1 ind using `pred', nogen keepusing(correct_prediction)
+merge 1:1 ind using `pred', nogen keepusing(correct_prediction predicted_y)
 
 gen correct_migrant = (correct_prediction==1 & work_us_2010==1)
+gen incorrect_migrant = (correct_prediction==0 & work_us_2010==1)
 tab correct_migrant
-* 341/344 migrants correctly predicted, 3 incorrect (all 3 new)
+* 335/344 migrants correctly predicted, 9 incorrect
 
 gen stayed_migrant = (work_us_2010==1 & work_us_2009==1)
 tab stayed_migrant
@@ -86,32 +87,55 @@ tab correct_stayed_migrant
 
 gen correct_new_migrant = (correct_migrant==1 & work_us_2009==0)
 tab correct_new_migrant
-* 13/16 of new migrants correctly predicted, 3 incorrect
+* 7/16 of new migrants correctly predicted, 9 incorrect
 
 tab us_experience_1980_2009 new_migrant
 * 11 migrants in 2010 with no US experience
 
 gen correct_new_migrant_nous = correct_new_migrant==1 & us_experience_1980_2009=="No experience"
 tab correct_new_migrant_nous
-* 8/11 of new migrants correctly predicted, 3 incorrect
+* 4/11 of new migrants correctly predicted, 7 incorrect
+
+tab us_experience_1980_2009 incorrect_migrant
+* Out of 9 incorrect, 7 are totally new (no US exp), 2 have 4-7 years of US exp
+
+gen stayed_migrant_nopast3 = (stayed_migrant==1 & past5tot<3)
+tab stayed_migrant_nopast3
+* 84 stayed migrants with less than 3 years in the US in the past 5 years
+
+gen correct_nopast3_migrant = (correct_migrant==1 & stayed_migrant_nopast3==1)
+tab correct_nopast3_migrant
+* 84/84 correct
 
 ////////////////////////////////////////////////////////////////////////////////
 
-keep if correct_new_migrant==1
-keep ind
-tempfile correct_new_migrant
-save `correct_new_migrant'
+keep if new_migrant==1
+keep ind correct_prediction predicted_y
+tempfile new_migrant
+save `new_migrant'
 
 use "$data/MexMigData.dta", clear 
-merge m:1 ind using `correct_new_migrant'
+merge m:1 ind using `new_migrant'
 keep if _merge==3
-keep ind year work_us
+keep ind year work_us correct_prediction predicted_y
 egen id = group(ind)
 
-twoway (scatter work_us year if id < 13, sort by(id, ///
-    title("Trajectories of New Migrants Correctly Predicted for 2010", size(medium)) ///
-	note("New migrants are the 16 individuals who worked in the US in 2010 but not in 2009. 328 individuals worked in the US in both 2009 and 2010.",size(vsmall)) ///
-	caption("The ML model correctly predicted 13 of the 16 new migrants in 2010 and all 328 existing migrants.",size(vsmall)))), ///
+tab id correct_prediction if year==2010
+label define id_lbl 1 "Incorrect" 2 "Correct" 3 "Incorrect" 4 "Incorrect" ///
+    5 "Incorrect" 6 "Correct" 7 "Correct" 8 "Incorrect" 9 "Correct" ///
+    10 "Incorrect" 11 "Correct" 12 "Correct" 13 "Correct" 14 "Incorrect" ///
+    15 "Incorrect" 16 "Incorrect"
+label values id id_lbl
+
+* Replace actual y with the prediction:
+replace work_us = predicted_y if year == 2010
+gen highlight = (year==2010)
+
+sepscatter work_us year, separate(highlight) sort by(id, ///
+    title("Trajectories of 2010 New Migrants and Predictions", size(medium)) ///
+	note("New migrants are the 16 individuals in the sample who worked in the US in 2010 but not in 2009. 328 individuals worked in the US in both 2009 and 2010.",size(vsmall)) ///
+	caption("The ML model correctly predicts all 328 existing migrants, and 7 of the 16 new migrants in 2010.",size(vsmall)) ///
+	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
     ytitle("Worked in...", size(small)) xtitle("")
-graph export "$stats/correct_new_migrants_2010.png", replace
+graph export "$stats/new_migrants_2010.png", replace

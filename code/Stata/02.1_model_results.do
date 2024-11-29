@@ -15,7 +15,7 @@ global data "data"
 global stats "stats"
 global output "output"
 
-import delimited "$output/test_predictions_2010.csv", clear
+import delimited "$output/test_predictions_2010_add_vars1.csv", clear
 gen correct_prediction = (actual_y==predicted_y)
 tab correct_prediction
 
@@ -28,7 +28,7 @@ tab work_us
 
 gen correct_migrant = (correct_prediction==1 & work_us==1)
 tab correct_migrant
-* 341/344 migrants correctly predicted, 3 incorrect
+* 335/344 migrants correctly predicted, 9 incorrect
 
 gen stayed_migrant = (work_us==1 & l1_work_us==1)
 tab stayed_migrant
@@ -38,13 +38,29 @@ gen new_migrant = (work_us==1 & l1_work_us==0)
 tab new_migrant
 * 16 changed status from nonmigrant to migrant in 2010
 
+gen new2_migrant = (work_us==1 & l1_work_us==0 & l2_work_us==0)
+tab new2_migrant
+* 14 were migrants in 2010 but not 2009 or 2008
+
 gen correct_stayed_migrant = (correct_migrant==1 & l1_work_us==1)
 tab correct_stayed_migrant
 * 328/328 of those who stayed migrant correctly predicted, 0 incorrect
 
 gen correct_new_migrant = (correct_migrant==1 & l1_work_us==0)
 tab correct_new_migrant
-* 13/16 of new migrants correctly predicted, 3 incorrect
+* 7/16 of new migrants correctly predicted, 9 incorrect
+
+gen correct_new2_migrant = (correct_migrant==1 & l1_work_us==0 & l2_work_us==0)
+tab correct_new2_migrant
+* 5/14 of new2 migrants correctly predicted, 9 incorrect
+
+gen seminew_migrant = (work_us==1 & l1_work_us==1 & l2_work_us==0)
+tab seminew_migrant
+* 8 were migrants in 2010 and 2009 but not 2008
+
+gen correct_seminew_migrant = (correct_migrant==1 & l1_work_us==1 & l2_work_us==0)
+tab correct_seminew_migrant
+* 8/8 seminew migrants correctly predicted, 0 incorrect
 
 ////////////////////////////////////////////////////////////////////////////////
 * Non-migrants
@@ -55,7 +71,7 @@ tab work_us
 
 gen correct_nonmigrant = (correct_prediction==1 & work_us==0)
 tab correct_nonmigrant
-* 5,612/5,645 nonmigrants correctly predicted
+* 5,518/5,645 nonmigrants correctly predicted, 127 incorrect
 
 gen stayed_nonmigrant = (work_us==0 & l1_work_us==0)
 tab stayed_nonmigrant
@@ -67,8 +83,8 @@ tab new_nonmigrant
 
 gen correct_stayed_nonmigrant = (correct_nonmigrant==1 & l1_work_us==0)
 tab correct_stayed_nonmigrant
-* 5,595/5,616 of those who stayed nonmigrant correctly predicted
+* 5,518/5,616 of those who stayed nonmigrant correctly predicted, 98 incorrect
 
 gen correct_new_nonmigrant = (correct_nonmigrant==1 & l1_work_us==1)
 tab correct_new_nonmigrant
-* 17/29 of those who stopped migrating correctly predicted
+* 0/29 of those who stopped migrating correctly predicted

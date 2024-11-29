@@ -1,7 +1,7 @@
 ####################################################################################################
 ## Description: Machine learning program to predict migration in Mexico
 ## Author: Parth Chawla
-## Date: Aug 25, 2024
+## Date: Nov, 2024
 ####################################################################################################
 
 import os
@@ -29,16 +29,17 @@ os.chdir(path)
 df = pd.read_csv('data/data_cohort_analysis_add_vars.csv')
 vill_cols = [col for col in df if col.startswith('vill_')]
 
-# Create x and y variables:
-x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 'ag', 'nonag', 
-           'yrs_in_mx_cum', 'yrs_in_us_cum', 'yrs_in_ag_cum', 'yrs_in_nonag_cum', 
-           'yrs_in_mx_ag_sal_cum', 'yrs_in_mx_nonag_sal_cum', 'yrs_in_mx_ag_own_cum', 
-           'yrs_in_mx_nonag_own_cum', 'yrs_in_us_ag_sal_cum', 'yrs_in_us_nonag_sal_cum', 
-           'yrs_in_us_ag_own_cum', 'yrs_in_us_nonag_own_cum',
+# Create x and y variables (most lagged to avoid leakage):
+x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 
+           'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum', 
+           'L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_mx_nonag_sal_cum', 'L1_yrs_in_mx_ag_own_cum', 
+           'L1_yrs_in_mx_nonag_own_cum', 'L1_yrs_in_us_ag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum', 
+           'L1_yrs_in_us_ag_own_cum', 'L1_yrs_in_us_nonag_own_cum',
            'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
            'ag_inc', 'asset_inc', 'farmlab_inc', 'liv_inc', 'nonag_inc', 
            'plot_inc_renta_ag', 'plot_inc_renta_nonag', 'rec_inc', 
-           'rem_mx', 'rem_us', 'trans_inc']
+           'rem_mx', 'rem_us', 'trans_inc',
+           'L1_hh_yrs_in_us_cum', 'L1_hh_migrant']
 
 # Assuming vill_cols is a list of village dummies already defined somewhere in your code
 x_cols = x_cols1 + vill_cols  # Final feature columns
@@ -63,8 +64,8 @@ param_space = {
     'num_leaves': np.random.randint(20, 150, size=100),  # Max number of leaves in one tree
     'min_data_in_leaf': np.random.randint(10, 100, size=100),  # Min samples required in a leaf
     'learning_rate': np.random.uniform(0.01, 0.1, size=100),  # Step size for each boosting step
-    'feature_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of features used per tree
-    'bagging_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of data used per iteration
+    'feature_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of features used per tree
+    'bagging_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of data used per iteration
 }
 
 df['male'] = pd.to_numeric(df['male'], errors='coerce')  # Convert strings or mixed types to numeric
@@ -154,8 +155,8 @@ d_combined = lgb.Dataset(X_combined, label=y_combined)
 final_model = lgb.train(best_params, d_combined, num_boost_round=best_model.best_iteration)
 
 # Save the final model to a file
-final_model.save_model('output/final_model.txt')
-print("Final model saved to 'output/final_model.txt'")
+final_model.save_model('output/final_model1.txt')
+print("Final model saved to 'output/final_model1.txt'")
 
 # Calculate feature importance
 importance_df = pd.DataFrame({
@@ -169,7 +170,7 @@ plt.figure(figsize=(12, 6))
 sns.barplot(data=importance_df.head(20), x='importance', y='feature')
 plt.title('Top 20 Most Important Features')
 plt.tight_layout()
-plt.savefig('output/feature_importance_add_vars.png')
+plt.savefig('output/feature_importance_add_vars1.png')
 plt.close()
 
 # Evaluate the final model on the test cohort (last cohort's outcome period)
@@ -192,7 +193,7 @@ y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to b
 test_data['actual_y'] = y_test.values  # Add the actual target values
 test_data['predicted_y'] = y_test_pred_binary  # Add the predicted binary values
 test_data['predicted_prob'] = y_test_pred  # Add the predicted probabilities
-test_data.to_csv('output/test_predictions_2010_add_vars.csv', index=False)
+test_data.to_csv('output/test_predictions_2010_add_vars1.csv', index=False)
 
 # Calculate precision, recall, and F1 score
 precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred_binary, average='binary')
@@ -208,7 +209,7 @@ shap_values = explainer.shap_values(X_test)
 plt.figure(figsize=(10, 6))
 shap.summary_plot(shap_values, X_test, show=False)
 plt.tight_layout()
-plt.savefig('output/shap_summary_add_vars.png')
+plt.savefig('output/shap_summary_add_vars1.png')
 plt.close()
 
 # Create classification report:
@@ -220,7 +221,7 @@ cnf_matrix = metrics.confusion_matrix(y_test, y_test_pred_binary)
 
 # Write classification report and confusion matrix to txt:
 cm = np.array2string(cnf_matrix)
-with open('output/report_lightgbm_add_vars.txt', 'w') as f:
+with open('output/report_lightgbm_add_vars1.txt', 'w') as f:
     f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
 
 # Create heatmap for the confusion matrix:
@@ -235,5 +236,5 @@ plt.tight_layout()
 plt.title('Confusion matrix', y=1.1)
 plt.ylabel('Actual')
 plt.xlabel('Predicted')
-plt.savefig('output/confusion_matrix_lightgbm_add_vars.png', bbox_inches='tight')
+plt.savefig('output/confusion_matrix_lightgbm_add_vars1.png', bbox_inches='tight')
 plt.show()

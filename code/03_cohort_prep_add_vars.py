@@ -60,32 +60,31 @@ cols_to_move = ['ind', 'year']
 df = df[cols_to_move + [col for col in df.columns if col not in cols_to_move]] # cols to front
 df = df.sort_values(by=['ind', 'year'], ascending=[True, True]) # sort
 
-# Create cumulative variables:
-df['work_in_mx'] = np.where((df['work_loc']==1) | (df['work_mx']==1), 1, 0) # worked in mx in year t
-df['yrs_in_mx_cum'] = df.groupby(['ind'])['work_in_mx'].cumsum() # years worked in mx till t
-df['yrs_in_us_cum'] = df.groupby('ind')['work_us'].cumsum() # years worked in the US till t
-df['yrs_in_ag_cum'] = df.groupby('ind')['ag'].cumsum() # years worked in ag till t
-df['yrs_in_nonag_cum'] = df.groupby('ind')['nonag'].cumsum() # years worked in ag till t
+# Create cumulative variables excluding the current year
+df['work_in_mx'] = np.where((df['work_loc'] == 1) | (df['work_mx'] == 1), 1, 0)
+df['L1_yrs_in_mx_cum'] = df.groupby('ind')['work_in_mx'].cumsum().shift(1)
+df['L1_yrs_in_us_cum'] = df.groupby('ind')['work_us'].cumsum().shift(1)
+df['L1_yrs_in_ag_cum'] = df.groupby('ind')['ag'].cumsum().shift(1)
+df['L1_yrs_in_nonag_cum'] = df.groupby('ind')['nonag'].cumsum().shift(1)
 
-df['work_mx_ag_sal'] = np.where((df['loc_ag_sal_']==1) | (df['mx_ag_sal_']==1), 1, 0)
-df['work_mx_nonag_sal'] = np.where((df['loc_nonag_sal_']==1) | (df['mx_nonag_sal_']==1), 1, 0)
-df['yrs_in_mx_ag_sal_cum'] = df.groupby(['ind'])['work_mx_ag_sal'].cumsum()
-df['yrs_in_mx_nonag_sal_cum'] = df.groupby(['ind'])['work_mx_nonag_sal'].cumsum()
+df['work_mx_ag_sal'] = np.where((df['loc_ag_sal_'] == 1) | (df['mx_ag_sal_'] == 1), 1, 0)
+df['work_mx_nonag_sal'] = np.where((df['loc_nonag_sal_'] == 1) | (df['mx_nonag_sal_'] == 1), 1, 0)
+df['L1_yrs_in_mx_ag_sal_cum'] = df.groupby('ind')['work_mx_ag_sal'].cumsum().shift(1)
+df['L1_yrs_in_mx_nonag_sal_cum'] = df.groupby('ind')['work_mx_nonag_sal'].cumsum().shift(1)
 
-df['work_mx_ag_own'] = np.where((df['loc_ag_own_']==1) | (df['mx_ag_own_']==1), 1, 0)
-df['work_mx_nonag_own'] = np.where((df['loc_nonag_own_']==1) | (df['mx_nonag_own_']==1), 1, 0)
-df['yrs_in_mx_ag_own_cum'] = df.groupby(['ind'])['work_mx_ag_own'].cumsum()
-df['yrs_in_mx_nonag_own_cum'] = df.groupby(['ind'])['work_mx_nonag_own'].cumsum()
+df['work_mx_ag_own'] = np.where((df['loc_ag_own_'] == 1) | (df['mx_ag_own_'] == 1), 1, 0)
+df['work_mx_nonag_own'] = np.where((df['loc_nonag_own_'] == 1) | (df['mx_nonag_own_'] == 1), 1, 0)
+df['L1_yrs_in_mx_ag_own_cum'] = df.groupby('ind')['work_mx_ag_own'].cumsum().shift(1)
+df['L1_yrs_in_mx_nonag_own_cum'] = df.groupby('ind')['work_mx_nonag_own'].cumsum().shift(1)
 
-df['yrs_in_us_ag_sal_cum'] = df.groupby(['ind'])['us_ag_sal_'].cumsum()
-df['yrs_in_us_nonag_sal_cum'] = df.groupby(['ind'])['us_nonag_sal_'].cumsum()
-df['yrs_in_us_ag_own_cum'] = df.groupby(['ind'])['us_ag_own_'].cumsum()
-df['yrs_in_us_nonag_own_cum'] = df.groupby(['ind'])['us_nonag_own_'].cumsum()
+df['L1_yrs_in_us_ag_sal_cum'] = df.groupby('ind')['us_ag_sal_'].cumsum().shift(1)
+df['L1_yrs_in_us_nonag_sal_cum'] = df.groupby('ind')['us_nonag_sal_'].cumsum().shift(1)
+df['L1_yrs_in_us_ag_own_cum'] = df.groupby('ind')['us_ag_own_'].cumsum().shift(1)
+df['L1_yrs_in_us_nonag_own_cum'] = df.groupby('ind')['us_nonag_own_'].cumsum().shift(1)
 
-print(df[['yrs_in_mx_cum', 'yrs_in_us_cum', 'yrs_in_ag_cum', 'yrs_in_nonag_cum', 
-          'yrs_in_mx_ag_sal_cum', 'yrs_in_mx_nonag_sal_cum', 'yrs_in_mx_ag_own_cum', 
-          'yrs_in_mx_nonag_own_cum', 'yrs_in_us_ag_sal_cum', 'yrs_in_us_nonag_sal_cum', 
-          'yrs_in_us_ag_own_cum', 'yrs_in_us_nonag_own_cum']].head())
+# Cumsum of entire household
+df = df.sort_values(by=['numc', 'year'], ascending=[True, True]) # sort
+df['L1_hh_yrs_in_us_cum'] = df.groupby('numc')['work_us'].cumsum().shift(1)
 
 df['cohort'] = df['year'].apply(assign_cohort)
 cohort_counts = df['cohort'].value_counts().sort_index()
@@ -95,10 +94,20 @@ print(cohort_counts)
 vill_dummies = pd.get_dummies(df['villageid'], drop_first=True, prefix="vill", dtype=int)
 df = pd.concat([df, vill_dummies], axis=1)
 
+df = df.sort_values(by=['ind', 'year'], ascending=[True, True]) # sort
 df['L1_work_us'] = df.groupby('ind')['work_us'].shift(1)
 df['L1_work_mx'] = df.groupby('ind')['work_in_mx'].shift(1)
 df['L1_ag'] = df.groupby('ind')['ag'].shift(1)
 df['L1_nonag'] = df.groupby('ind')['nonag'].shift(1)
+df['L2_work_us'] = df.groupby('ind')['work_us'].shift(2)
+df['L2_work_mx'] = df.groupby('ind')['work_in_mx'].shift(2)
+df['L2_ag'] = df.groupby('ind')['ag'].shift(2)
+df['L2_nonag'] = df.groupby('ind')['nonag'].shift(2)
+
+# Check if any household member was a migrant
+df['L1_hh_migrant_any_year'] = df.groupby('numc')['L1_work_us'].transform('max')
+df['L1_hh_migrant'] = df.groupby(['numc', 'year'])['L1_work_us'].transform('max')
+df['L2_hh_migrant'] = df.groupby(['numc', 'year'])['L2_work_us'].transform('max')
 
 # Move 'cohort' to the first column:
 cols = ['cohort'] + [col for col in df.columns if col != 'cohort']
