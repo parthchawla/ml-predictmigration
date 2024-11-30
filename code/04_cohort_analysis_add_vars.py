@@ -64,8 +64,8 @@ param_space = {
     'num_leaves': np.random.randint(20, 150, size=100),  # Max number of leaves in one tree
     'min_data_in_leaf': np.random.randint(10, 100, size=100),  # Min samples required in a leaf
     'learning_rate': np.random.uniform(0.01, 0.1, size=100),  # Step size for each boosting step
-    'feature_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of features used per tree
-    'bagging_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of data used per iteration
+    'feature_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of features used per tree
+    'bagging_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of data used per iteration
 }
 
 df['male'] = pd.to_numeric(df['male'], errors='coerce')  # Convert strings or mixed types to numeric
