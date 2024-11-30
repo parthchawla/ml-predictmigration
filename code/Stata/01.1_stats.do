@@ -17,6 +17,27 @@ global stats "stats"
 global output "output"
 use "$data/MexMigData.dta", clear
 
+* No. of individuals who ever migrated
+// collapse (max) work_us, by(ind)
+// collapse (sum) work_us
+
+* No. of households who ever had any migrating household member
+// collapse (max) work_us, by(numc)
+// collapse (mean) work_us
+
+* Share of individuals migrating per year
+// collapse (count) total=work_us (sum) migrants=work_us (mean) share=work_us, by(year)
+
+* Share of households with at least one migrating member per year
+// collapse (max) work_us, by(year numc)
+// collapse (mean) work_us, by(year)
+
+* No. of people in 2010 who had ever had any migrating household member
+bysort numc (year): egen ever_migrant = max(work_us)
+gen hh_ever_migrant_2010 = ever_migrant if year == 2010
+tab hh_ever_migrant_2010
+drop ever_migrant
+
 gen migrant_type = "Never Migrant" if totalus==0 // 84%
 replace migrant_type = "Short-term Migrant" if totalus>=1 & totalus<=3 // 5%
 replace migrant_type = "Medium-term Migrant" if totalus>=4 & totalus<=10 // 6%
