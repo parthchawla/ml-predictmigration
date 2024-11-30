@@ -38,10 +38,14 @@ gen hh_ever_migrant_2010 = ever_migrant if year == 2010
 tab hh_ever_migrant_2010
 drop ever_migrant
 
-gen migrant_type = "Never Migrant" if totalus==0 // 84%
-replace migrant_type = "Short-term Migrant" if totalus>=1 & totalus<=3 // 5%
-replace migrant_type = "Medium-term Migrant" if totalus>=4 & totalus<=10 // 6%
-replace migrant_type = "Long-term Migrant" if totalus>10 // 4%
+*** IMP NOTE: Doing "gen" does running sum, "egen" sums over whole group
+bysort ind (year): gen work_us_cumsum = sum(work_us)
+
+gen migrant_type = "Never Migrant" if work_us_cumsum == 0
+replace migrant_type = "Short-term Migrant" if work_us_cumsum >= 1 & work_us_cumsum <= 3
+replace migrant_type = "Medium-term Migrant" if work_us_cumsum >= 4 & work_us_cumsum <= 10
+replace migrant_type = "Long-term Migrant" if work_us_cumsum > 10
+order ind year work_us work_us_cumsum migrant_type
 
 sort ind year
 order ind year migrant_type
@@ -145,5 +149,5 @@ restore
 
 graph combine g2 g1, ///
 title("Share of Migrant Types and Transitions Over Time", size(medium)) ///
-note("Long-term Migrant: More than 10 years in the US; Medium-term Migrant: 4 to 10 years in the US; Short-term Migrant: 1 to 3 years in the US.",size(vsmall))
+note("Long-term Migrant: More than 10 years observed in the US; Medium-term Migrant: 4 to 10 years observed in the US; Short-term Migrant: 1 to 3 years observed in the US.",size(vsmall))
 graph export "$stats/migration_shares.png", replace
