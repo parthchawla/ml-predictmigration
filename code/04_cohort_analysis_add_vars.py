@@ -30,15 +30,15 @@ df = pd.read_csv('data/data_cohort_analysis_add_vars.csv')
 vill_cols = [col for col in df if col.startswith('vill_')]
 
 # Create x and y variables (most lagged to avoid leakage):
-x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 
+x_cols1 = ['male', 'age', 'L1_hhchildren', 'L1_hhworkforce', 
            'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum', 
            'L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_mx_nonag_sal_cum', 'L1_yrs_in_mx_ag_own_cum', 
            'L1_yrs_in_mx_nonag_own_cum', 'L1_yrs_in_us_ag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum', 
            'L1_yrs_in_us_ag_own_cum', 'L1_yrs_in_us_nonag_own_cum',
            'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
-           'ag_inc', 'asset_inc', 'farmlab_inc', 'liv_inc', 'nonag_inc', 
-           'plot_inc_renta_ag', 'plot_inc_renta_nonag', 'rec_inc', 
-           'rem_mx', 'rem_us', 'trans_inc',
+           'L1_ag_inc', 'L1_asset_inc', 'L1_farmlab_inc', 'L1_liv_inc', 'L1_nonag_inc', 
+           'L1_plot_inc_renta_ag', 'L1_plot_inc_renta_nonag', 'L1_rec_inc', 
+           'L1_rem_mx', 'L1_rem_us', 'L1_trans_inc',
            'L1_hh_yrs_in_us_cum', 'L1_hh_migrant']
 
 # Assuming vill_cols is a list of village dummies already defined somewhere in your code
@@ -64,8 +64,8 @@ param_space = {
     'num_leaves': np.random.randint(20, 150, size=100),  # Max number of leaves in one tree
     'min_data_in_leaf': np.random.randint(10, 100, size=100),  # Min samples required in a leaf
     'learning_rate': np.random.uniform(0.01, 0.1, size=100),  # Step size for each boosting step
-    'feature_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of features used per tree
-    'bagging_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of data used per iteration
+    'feature_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of features used per tree
+    'bagging_fraction': np.random.uniform(0.7, 1.0, size=100),  # Fraction of data used per iteration
 }
 
 df['male'] = pd.to_numeric(df['male'], errors='coerce')  # Convert strings or mixed types to numeric

@@ -82,9 +82,22 @@ df['L1_yrs_in_us_nonag_sal_cum'] = df.groupby('ind')['us_nonag_sal_'].cumsum().s
 df['L1_yrs_in_us_ag_own_cum'] = df.groupby('ind')['us_ag_own_'].cumsum().shift(1)
 df['L1_yrs_in_us_nonag_own_cum'] = df.groupby('ind')['us_nonag_own_'].cumsum().shift(1)
 
-# Cumsum of entire household
+# Entire household cumsum, lags
 df = df.sort_values(by=['numc', 'year'], ascending=[True, True]) # sort
 df['L1_hh_yrs_in_us_cum'] = df.groupby('numc')['work_us'].cumsum().shift(1)
+df['L1_hhchildren'] = df.groupby('numc')['hhchildren'].shift(1)
+df['L1_hhworkforce'] = df.groupby('numc')['hhworkforce'].shift(1)
+df['L1_ag_inc'] = df.groupby('numc')['ag_inc'].shift(1)
+df['L1_asset_inc'] = df.groupby('numc')['asset_inc'].shift(1)
+df['L1_farmlab_inc'] = df.groupby('numc')['farmlab_inc'].shift(1)
+df['L1_liv_inc'] = df.groupby('numc')['liv_inc'].shift(1)
+df['L1_nonag_inc'] = df.groupby('numc')['nonag_inc'].shift(1)
+df['L1_plot_inc_renta_ag'] = df.groupby('numc')['plot_inc_renta_ag'].shift(1)
+df['L1_plot_inc_renta_nonag'] = df.groupby('numc')['plot_inc_renta_nonag'].shift(1)
+df['L1_rec_inc'] = df.groupby('numc')['rec_inc'].shift(1)
+df['L1_rem_mx'] = df.groupby('numc')['rem_mx'].shift(1)
+df['L1_rem_us'] = df.groupby('numc')['rem_us'].shift(1)
+df['L1_trans_inc'] = df.groupby('numc')['trans_inc'].shift(1)
 
 df['cohort'] = df['year'].apply(assign_cohort)
 cohort_counts = df['cohort'].value_counts().sort_index()
@@ -94,6 +107,7 @@ print(cohort_counts)
 vill_dummies = pd.get_dummies(df['villageid'], drop_first=True, prefix="vill", dtype=int)
 df = pd.concat([df, vill_dummies], axis=1)
 
+# Individual lags
 df = df.sort_values(by=['ind', 'year'], ascending=[True, True]) # sort
 df['L1_work_us'] = df.groupby('ind')['work_us'].shift(1)
 df['L1_work_mx'] = df.groupby('ind')['work_in_mx'].shift(1)

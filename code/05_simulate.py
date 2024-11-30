@@ -29,16 +29,17 @@ os.chdir(path)
 df = pd.read_csv('data/data_cohort_analysis_add_vars.csv')
 vill_cols = [col for col in df if col.startswith('vill_')]
 
-# Create x and y variables:
-x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 'ag', 'nonag', 
-           'yrs_in_mx_cum', 'yrs_in_us_cum', 'yrs_in_ag_cum', 'yrs_in_nonag_cum', 
-           'yrs_in_mx_ag_sal_cum', 'yrs_in_mx_nonag_sal_cum', 'yrs_in_mx_ag_own_cum', 
-           'yrs_in_mx_nonag_own_cum', 'yrs_in_us_ag_sal_cum', 'yrs_in_us_nonag_sal_cum', 
-           'yrs_in_us_ag_own_cum', 'yrs_in_us_nonag_own_cum',
+# Create x and y variables (most lagged to avoid leakage):
+x_cols1 = ['male', 'age', 'hhchildren', 'hhworkforce', 
+           'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum', 
+           'L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_mx_nonag_sal_cum', 'L1_yrs_in_mx_ag_own_cum', 
+           'L1_yrs_in_mx_nonag_own_cum', 'L1_yrs_in_us_ag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum', 
+           'L1_yrs_in_us_ag_own_cum', 'L1_yrs_in_us_nonag_own_cum',
            'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
            'ag_inc', 'asset_inc', 'farmlab_inc', 'liv_inc', 'nonag_inc', 
            'plot_inc_renta_ag', 'plot_inc_renta_nonag', 'rec_inc', 
-           'rem_mx', 'rem_us', 'trans_inc']
+           'rem_mx', 'rem_us', 'trans_inc',
+           'L1_hh_yrs_in_us_cum', 'L1_hh_migrant']
 
 # Assuming vill_cols is a list of village dummies already defined somewhere in your code
 x_cols = x_cols1 + vill_cols  # Final feature columns
