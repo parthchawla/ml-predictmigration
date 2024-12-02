@@ -15,6 +15,7 @@ cd "$path"
 global data "data"
 global stats "stats"
 global output "output"
+
 use "$data/MexMigData.dta", clear
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +53,7 @@ gen past5once_us = (past5tot > 0)
 tab past5tot work_us_2010
 tab past5once_us work_us_2010
 tab totalus_1980_2009 work_us_2010
-tab us_experience_1980_2009 work_us_2010
+tab us_experience_1980_2009 work_us_2010 // 11 migrants in 2010 with no US exp
 preserve
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +72,7 @@ merge 1:1 ind using `pred', nogen keepusing(correct_prediction predicted_y)
 gen correct_migrant = (correct_prediction==1 & work_us_2010==1)
 gen incorrect_migrant = (correct_prediction==0 & work_us_2010==1)
 tab correct_migrant
-* 335/344 migrants correctly predicted, 9 incorrect
+* 336/344 migrants correctly predicted, 9 incorrect
 
 gen stayed_migrant = (work_us_2010==1 & work_us_2009==1)
 tab stayed_migrant
@@ -87,44 +88,56 @@ tab correct_stayed_migrant
 
 gen correct_new_migrant = (correct_migrant==1 & work_us_2009==0)
 tab correct_new_migrant
-* 7/16 of new migrants correctly predicted, 9 incorrect
+* 8/16 of new migrants correctly predicted, 8 incorrect
 
 tab us_experience_1980_2009 new_migrant
 * 11 migrants in 2010 with no US experience
 
 gen correct_new_migrant_nous = correct_new_migrant==1 & us_experience_1980_2009=="No experience"
 tab correct_new_migrant_nous
-* 4/11 of new migrants correctly predicted, 7 incorrect
+* 5/11 of new migrants correctly predicted, 6 incorrect
 
 tab us_experience_1980_2009 incorrect_migrant
-* Out of 9 incorrect, 7 are totally new (no US exp), 2 have 4-7 years of US exp
+* Out of 8 incorrect, 6 are totally new (no US exp), 2 have 4-7 years of US exp
+
+gen migrant_nopast3 = (work_us_2010==1 & past5tot<3)
+tab migrant_nopast3
+* 97 migrants in 2010 with less than 3 years in the US in the past 5 years
+
+gen correct_nopast3_migrant = (correct_migrant==1 & migrant_nopast3==1)
+tab correct_nopast3_migrant
+* 91/97 correct
 
 gen stayed_migrant_nopast3 = (stayed_migrant==1 & past5tot<3)
 tab stayed_migrant_nopast3
 * 84 stayed migrants with less than 3 years in the US in the past 5 years
 
-gen correct_nopast3_migrant = (correct_migrant==1 & stayed_migrant_nopast3==1)
-tab correct_nopast3_migrant
+gen correct_stayed_migrant_nopast3 = (correct_migrant==1 & stayed_migrant_nopast3==1)
+tab correct_stayed_migrant_nopast3
 * 84/84 correct
 
 ////////////////////////////////////////////////////////////////////////////////
 
-keep if new_migrant==1
+set seed 1234
+
+gen keep1 = (work_us_2009==0 & correct_prediction==1 & migrant_nopast3==1)
+keep if migrant_nopast3==1 | keep1==1
+sample 13 if keep1!=1, count
 keep ind correct_prediction predicted_y
-tempfile new_migrant
-save `new_migrant'
+save "$stats/ids.dta", replace
 
 use "$data/MexMigData.dta", clear 
-merge m:1 ind using `new_migrant'
+merge m:1 ind using "$stats/ids.dta"
 keep if _merge==3
+
 keep ind year work_us correct_prediction predicted_y
 egen id = group(ind)
 
 tab id correct_prediction if year==2010
-label define id_lbl 1 "Incorrect" 2 "Correct" 3 "Incorrect" 4 "Incorrect" ///
-    5 "Incorrect" 6 "Correct" 7 "Correct" 8 "Incorrect" 9 "Correct" ///
-    10 "Incorrect" 11 "Correct" 12 "Correct" 13 "Correct" 14 "Incorrect" ///
-    15 "Incorrect" 16 "Incorrect"
+label define id_lbl 1 "Correct" 2 "Correct" 3 "Correct" 4 "Correct" ///
+    5 "Correct" 6 "Incorrect" 7 "Correct" 8 "Correct" 9 "Correct" ///
+    10 "Correct" 11 "Correct" 12 "Correct" 13 "Correct" 14 "Correct" ///
+    15 "Correct" 16 "Correct" 17 "Correct" 18 "Correct" 19 "Correct" 20 "Correct"
 label values id id_lbl
 
 * Replace actual y with the prediction:
@@ -132,10 +145,10 @@ replace work_us = predicted_y if year == 2010
 gen highlight = (year==2010)
 
 sepscatter work_us year, separate(highlight) sort by(id, ///
-    title("Trajectories of 2010 New Migrants and Predictions", size(medium)) ///
-	note("New migrants are the 16 individuals in the sample who worked in the US in 2010 but not in 2009. 328 individuals worked in the US in both 2009 and 2010.",size(vsmall)) ///
-	caption("The ML model correctly predicts all 328 existing migrants, and 7 of the 16 new migrants in 2010.",size(vsmall)) ///
+    title("Trajectories and Predictions of 2010 Migrants with Limited US Experience", size(medium)) ///
+	note("This table shows individuals with less than 3 years of US experience during the 5 years preceding 2010 (2005–2009).",size(vsmall)) ///
+	caption("Of the 97 migrants in 2010 with limited prior US experience, my ML model correctly predicted 91.",size(vsmall)) ///
 	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
     ytitle("Worked in...", size(small)) xtitle("")
-graph export "$stats/new_migrants_2010.png", replace
+graph export "$stats/migrants_2010.png", replace

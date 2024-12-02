@@ -15,6 +15,7 @@ cd "$path"
 global data "data"
 global stats "stats"
 global output "output"
+
 use "$data/MexMigData.dta", clear
 
 * No. of individuals who ever migrated
