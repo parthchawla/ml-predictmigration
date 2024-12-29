@@ -84,11 +84,11 @@ gen migrant_t1 = L1.work_us  // previous period (t-1)
 gen migrant_t2 = work_us     // current period (t)
 
 * Create detailed transition categories
-gen transition = "Stayed in Mexico" if migrant_t1==0 & migrant_t2==0
-replace transition = "Moved to the US" if migrant_t1==0 & migrant_t2==1
-replace transition = "Went back to Mexico" if migrant_t1==1 & migrant_t2==0
-replace transition = "Stayed in the US" if migrant_t1==1 & migrant_t2==1
-replace transition = "First observed" if migrant_t1==.
+gen transition = "Didn't Migrate" if migrant_t1==0 & migrant_t2==0
+replace transition = "Moved to US" if migrant_t1==0 & migrant_t2==1
+replace transition = "Stopped Working in US" if migrant_t1==1 & migrant_t2==0
+replace transition = "Stayed in US" if migrant_t1==1 & migrant_t2==1
+replace transition = "First Observed" if migrant_t1==.
 
 * Tabulate to see transitions
 tab transition year, row
@@ -111,11 +111,11 @@ preserve
     bys year: egen total = sum(n)
     gen share = n/total
 	
-	gen order = 1 if transition=="Moved to the US"
-	replace order = 2 if transition=="Stayed in the US"
-	replace order = 3 if transition=="Stayed in Mexico"
-	replace order = 4 if transition=="First observed"
-	replace order = 5 if transition=="Went back to Mexico"
+	gen order = 1 if transition=="Moved to US"
+	replace order = 2 if transition=="Stayed in US"
+	replace order = 3 if transition=="Didn't Migrate"
+	replace order = 4 if transition=="First Observed"
+	replace order = 5 if transition=="Stopped Working in US"
 
     * Create stacked bar graph
 	graph hbar (asis) share, name(g1) ///
@@ -124,8 +124,9 @@ preserve
 		ytitle("Share of Sample", size(small)) ///
 		b1title(,size(small)) yla(,labs(small)) stack asyvars ///
 		legend(size(small) rows(2) pos(6)) ///
-		bar(1,color(dimgray)) bar(2,color(maroon)) bar(3,color(eltblue)) ///
+		bar(1,color(eltblue)) bar(2,color(dimgray)) bar(3,color(maroon)) ///
 		bar(4,color(erose)) bar(5,color(edkblue))
+
 restore
 
 * 3. Stacked bar chart of migrant types by year
