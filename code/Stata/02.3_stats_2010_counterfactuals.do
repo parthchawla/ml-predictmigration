@@ -116,7 +116,7 @@ sepscatter work_us year, separate(highlight) sort by(id, ///
 	caption("NOTE: Remittances only vary in 2002, 2003, and 2008, which likely underestimates their overall impact.",size(vsmall)) ///
 	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
-    ytitle("Worked in...", size(small)) xtitle("")
+    ytitle("", size(small)) xtitle("")
 graph export "$stats/migrants_2010_elim_remittances.png", replace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,7 +141,7 @@ sepscatter work_us year, separate(highlight) sort by(id, ///
 	note("These graphs show individuals with less than 3 years of US experience during the 5 years preceding 2010 (2005–2009). Counterfactual predictions are highlighted in red.",size(vsmall)) ///
 	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
-    ytitle("Worked in...", size(small)) xtitle("")
+    ytitle("", size(small)) xtitle("")
 graph export "$stats/migrants_2010_double_age.png", replace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -165,5 +165,5 @@ sepscatter work_us year, separate(highlight) sort by(id, ///
 	note("These graphs show individuals with less than 3 years of US experience during the 5 years preceding 2010 (2005–2009). Counterfactual predictions are highlighted in red.",size(vsmall)) ///
 	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
-    ytitle("Worked in...", size(small)) xtitle("")
+    ytitle("", size(small)) xtitle("")
 graph export "$stats/migrants_2010_double_hhworkforce.png", replace

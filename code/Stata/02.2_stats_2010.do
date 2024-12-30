@@ -145,10 +145,10 @@ replace work_us = predicted_y if year == 2010
 gen highlight = (year==2010)
 
 sepscatter work_us year, separate(highlight) sort by(id, ///
-    title("Trajectories and Predictions of 2010 Migrants with Limited US Experience", size(medium)) ///
+    title("Trajectories and Predictions of 2010 Migrants with Limited Recent US Experience", size(medium)) ///
 	note("These graphs show individuals with less than 3 years of US experience during the 5 years preceding 2010 (2005–2009).",size(vsmall)) ///
-	caption("Of the 97 migrants in 2010 with limited prior US experience, my ML model correctly predicted 91. Predictions are highlighted in red.",size(vsmall)) ///
+	caption("Of the 97 migrants in 2010 with limited recent US experience, my ML model correctly predicted 91. Predictions are highlighted in red.",size(vsmall)) ///
 	legend(off)) mc(blue red) ms(O O) ///
     yla(0 "Mexico" 1 "US") xla(1980(10)2010) ///
-    ytitle("Worked in...", size(small)) xtitle("")
+    ytitle("", size(small)) xtitle("")
 graph export "$stats/migrants_2010.png", replace
