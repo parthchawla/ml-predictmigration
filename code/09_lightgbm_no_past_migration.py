@@ -29,21 +29,48 @@ os.chdir(path)
 df = pd.read_csv('data/data_cohort_analysis_add_vars.csv')
 vill_cols = [col for col in df if col.startswith('vill_')]
 
-# Create x and y variables (most lagged to avoid leakage):
-x_cols1 = ['male', 'age', 'L1_hhchildren', 'L1_hhworkforce', 
-           'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum', 
-           'L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_mx_nonag_sal_cum', 'L1_yrs_in_mx_ag_own_cum', 
-           'L1_yrs_in_mx_nonag_own_cum', 'L1_yrs_in_us_ag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum', 
-           'L1_yrs_in_us_ag_own_cum', 'L1_yrs_in_us_nonag_own_cum',
-           'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
-           'L1_ag_inc', 'L1_asset_inc', 'L1_farmlab_inc', 'L1_liv_inc', 'L1_nonag_inc', 
-           'L1_plot_inc_renta_ag', 'L1_plot_inc_renta_nonag', 'L1_rec_inc', 
-           'L1_rem_mx', 'L1_rem_us', 'L1_trans_inc',
-           'L1_hh_yrs_in_us_cum', 'L1_hh_migrant']
+x_cols1 = [
+    'male', 'age', 'L1_hhchildren', 'L1_hhworkforce',
+    'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum',
+    'L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_mx_nonag_sal_cum',
+    'L1_yrs_in_mx_ag_own_cum', 'L1_yrs_in_mx_nonag_own_cum',
+    'L1_yrs_in_us_ag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum',
+    'L1_yrs_in_us_ag_own_cum', 'L1_yrs_in_us_nonag_own_cum',
+    'L1_ag', 'L1_nonag',
+    # 'L1_rem_mx', 'L1_rem_us',
+    'L1_ag_inc', 'L1_asset_inc', 'L1_farmlab_inc', 'L1_liv_inc', 'L1_nonag_inc',
+    'L1_plot_inc_renta_ag', 'L1_plot_inc_renta_nonag', 'L1_rec_inc', 'L1_trans_inc'
+]
 
-# Assuming vill_cols is a list of village dummies already defined somewhere in your code
-x_cols = x_cols1 + vill_cols  # Final feature columns
-y_cols = ['work_us']  # Define the target column
+# Aggregate location-specific variables into location-agnostic versions
+agg_mappings = {
+    # 'L1_rem_total': ['L1_rem_mx', 'L1_rem_us'],
+    'L1_yrs_in_ag_sal_cum': ['L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_us_ag_sal_cum'],
+    'L1_yrs_in_nonag_sal_cum': ['L1_yrs_in_mx_nonag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum'],
+    'L1_yrs_in_ag_own_cum': ['L1_yrs_in_mx_ag_own_cum', 'L1_yrs_in_us_ag_own_cum'],
+    'L1_yrs_in_nonag_own_cum': ['L1_yrs_in_mx_nonag_own_cum', 'L1_yrs_in_us_nonag_own_cum']
+}
+
+for new_var, components in agg_mappings.items():
+    df[new_var] = df[components].sum(axis=1)
+
+# Drop the original location-specific columns
+to_drop = sum(agg_mappings.values(), [])
+df.drop(columns=to_drop, inplace=True)
+
+# Update x_cols1 to replace old vars with new aggregated ones
+x_cols1 = [c for c in x_cols1 if c not in to_drop]  # remove old vars
+x_cols1 += list(agg_mappings.keys())  # add new aggregated vars
+
+# Reconstruct full feature list
+vill_cols = [col for col in df.columns if col.startswith('vill_')]
+x_cols = x_cols1 + vill_cols
+
+print("New location-agnostic feature columns:")
+print(agg_mappings.keys())
+print("\nUpdated x_cols1:", x_cols1)
+
+y_col = 'work_us'
 
 # Define the cohorts for pre-periods and outcome periods
 pre_periods = ['1980-1984 Pre-Period', '1985-1989 Pre-Period', '1990-1994 Pre-Period', 
