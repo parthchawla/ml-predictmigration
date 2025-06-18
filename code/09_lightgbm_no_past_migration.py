@@ -187,10 +187,6 @@ print(f"X_combined shape: {X_combined.shape}, y_combined shape: {y_combined.shap
 d_combined = lgb.Dataset(X_combined, label=y_combined)
 final_model = lgb.train(best_params, d_combined, num_boost_round=best_model.best_iteration)
 
-# Save the final model to a file
-final_model.save_model('output/final_model1.txt')
-print("Final model saved to 'output/final_model1.txt'")
-
 # Calculate feature importance
 importance_df = pd.DataFrame({
     'feature': x_cols,
@@ -203,7 +199,7 @@ plt.figure(figsize=(12, 6))
 sns.barplot(data=importance_df.head(20), x='importance', y='feature')
 plt.title('Top 20 Most Important Features')
 plt.tight_layout()
-plt.savefig('output/feature_importance_add_vars1.png')
+plt.savefig('output/lightgbm_nm_feature_importance.png')
 plt.close()
 
 # Evaluate the final model on the test cohort (last cohort's outcome period)
@@ -226,7 +222,7 @@ y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to b
 test_data['actual_y'] = y_test.values  # Add the actual target values
 test_data['predicted_y'] = y_test_pred_binary  # Add the predicted binary values
 test_data['predicted_prob'] = y_test_pred  # Add the predicted probabilities
-test_data.to_csv('output/test_predictions_2010_add_vars1.csv', index=False)
+test_data.to_csv('output/test_nm_predictions_2010.csv', index=False)
 
 # Calculate precision, recall, and F1 score
 precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred_binary, average='binary')
@@ -242,7 +238,7 @@ shap_values = explainer.shap_values(X_test)
 plt.figure(figsize=(10, 6))
 shap.summary_plot(shap_values, X_test, show=False)
 plt.tight_layout()
-plt.savefig('output/shap_summary_add_vars1.png')
+plt.savefig('output/lightgbm_shap.png')
 plt.close()
 
 # Create classification report:
@@ -254,7 +250,7 @@ cnf_matrix = metrics.confusion_matrix(y_test, y_test_pred_binary)
 
 # Write classification report and confusion matrix to txt:
 cm = np.array2string(cnf_matrix)
-with open('output/report_lightgbm_add_vars1.txt', 'w') as f:
+with open('output/lightgbm_nm_report.txt', 'w') as f:
     f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
 
 # Create heatmap for the confusion matrix:
@@ -269,5 +265,5 @@ plt.tight_layout()
 plt.title('Confusion matrix', y=1.1)
 plt.ylabel('Actual')
 plt.xlabel('Predicted')
-plt.savefig('output/confusion_matrix_lightgbm_add_vars1.png', bbox_inches='tight')
+plt.savefig('output/lightgbm_nm_confusion_matrix.png', bbox_inches='tight')
 plt.show()
