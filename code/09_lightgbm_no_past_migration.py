@@ -70,7 +70,7 @@ print("New location-agnostic feature columns:")
 print(agg_mappings.keys())
 print("\nUpdated x_cols1:", x_cols1)
 
-y_col = 'work_us'
+y_cols = ['work_us']
 
 # Define the cohorts for pre-periods and outcome periods
 pre_periods = ['1980-1984 Pre-Period', '1985-1989 Pre-Period', '1990-1994 Pre-Period', 
