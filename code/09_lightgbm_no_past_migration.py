@@ -238,7 +238,7 @@ shap_values = explainer.shap_values(X_test)
 plt.figure(figsize=(10, 6))
 shap.summary_plot(shap_values, X_test, show=False)
 plt.tight_layout()
-plt.savefig('output/lightgbm_shap.png')
+plt.savefig('output/lightgbm_nm_shap.png')
 plt.close()
 
 # Create classification report:
