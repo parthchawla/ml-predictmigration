@@ -222,8 +222,15 @@ y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to b
 # ——— PR‐CURVE —————————————
 from sklearn.metrics import precision_recall_curve, auc
 
-prec_vals, rec_vals, _ = precision_recall_curve(y_test, y_test_pred)
+prec_vals, rec_vals, thresholds = precision_recall_curve(y_test, y_test_pred)
 pr_auc = auc(rec_vals, prec_vals)
+
+pr_df = pd.DataFrame({
+    'precision': prec_vals,
+    'recall':    rec_vals,
+    'threshold': np.append(thresholds, np.nan)
+})
+pr_df.to_csv('output/lightgbm_nm_precision_recall_curve.csv', index=False)
 
 plt.figure(figsize=(6, 4))
 plt.plot(rec_vals, prec_vals, label=f'PR Curve (AUC={pr_auc:.2f})')
