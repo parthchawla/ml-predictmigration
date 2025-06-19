@@ -10,6 +10,7 @@ from sklearn.pipeline import Pipeline
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import shap
 
 # 1) SETUP
 SEED = 42
@@ -79,6 +80,29 @@ y_prob = pipeline.predict_proba(X_test)[:, 1]
 
 precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
 print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
+
+# FEATURE IMPORTANCE (coefficients)
+coef = pipeline.named_steps['clf'].coef_[0]
+importance_df = pd.DataFrame({
+    'feature': x_cols,
+    'importance': np.abs(coef)
+}).sort_values('importance', ascending=False)
+plt.figure(figsize=(12,6))
+sns.barplot(data=importance_df.head(20), x='importance', y='feature')
+plt.title('Top 20 Most Important Features (|coef|)')
+plt.tight_layout()
+plt.savefig('output/logistic_feature_importance.png')
+plt.close()
+
+# SHAP SUMMARY PLOT
+X_test_imp = pipeline.named_steps['imputer'].transform(X_test)
+explainer = shap.LinearExplainer(pipeline.named_steps['clf'], pipeline.named_steps['imputer'].transform(X_train))
+shap_values = explainer.shap_values(X_test_imp)
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values, X_test_imp, feature_names=x_cols, show=False)
+plt.tight_layout()
+plt.savefig('output/logistic_shap.png')
+plt.close()
 
 # 8) SAVE OUTPUTS
 report = classification_report(y_test, y_pred, target_names=["No US work", "Worked US"])

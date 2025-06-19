@@ -218,6 +218,23 @@ print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
 y_test_pred = final_model.predict(X_test)
 y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to binary (0 or 1)
 
+# ——— PR‐CURVE —————————————
+from sklearn.metrics import precision_recall_curve, auc
+
+prec_vals, rec_vals, _ = precision_recall_curve(y_test, y_test_pred)
+pr_auc = auc(rec_vals, prec_vals)
+
+plt.figure(figsize=(6, 4))
+plt.plot(rec_vals, prec_vals, label=f'PR Curve (AUC={pr_auc:.2f})')
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision–Recall Curve')
+plt.legend()
+plt.tight_layout()
+plt.savefig('output/lightgbm_nm_precision_recall_curve.png')
+plt.close()
+# ——————————————————————————
+
 # Add actual and predicted values to the test dataset
 test_data['actual_y'] = y_test.values  # Add the actual target values
 test_data['predicted_y'] = y_test_pred_binary  # Add the predicted binary values
