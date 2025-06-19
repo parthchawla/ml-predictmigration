@@ -87,6 +87,8 @@ importance_df = pd.DataFrame({
     'feature': x_cols,
     'importance': np.abs(coef)
 }).sort_values('importance', ascending=False)
+importance_df.to_csv('output/logistic_feature_importance.csv', index=False)
+
 plt.figure(figsize=(12,6))
 sns.barplot(data=importance_df.head(20), x='importance', y='feature')
 plt.title('Top 20 Most Important Features (|coef|)')
@@ -98,6 +100,11 @@ plt.close()
 X_test_imp = pipeline.named_steps['imputer'].transform(X_test)
 explainer = shap.LinearExplainer(pipeline.named_steps['clf'], pipeline.named_steps['imputer'].transform(X_train))
 shap_values = explainer.shap_values(X_test_imp)
+
+shap_df = pd.DataFrame(shap_values, columns=x_cols)
+shap_df.insert(0, 'sample_id', test_df.index.values)
+shap_df.to_csv('output/logistic_shap.csv', index=False)
+
 plt.figure(figsize=(10,6))
 shap.summary_plot(shap_values, X_test_imp, feature_names=x_cols, show=False)
 plt.tight_layout()

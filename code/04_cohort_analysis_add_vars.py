@@ -170,6 +170,7 @@ importance_df = pd.DataFrame({
     'importance': final_model.feature_importance(importance_type='gain')
 })
 importance_df = importance_df.sort_values('importance', ascending=False)
+importance_df.to_csv('output/lightgbm_feature_importance.csv', index=False)
 
 # Save feature importance plot
 plt.figure(figsize=(12, 6))
@@ -229,6 +230,11 @@ print(f'Test F1 Score: {f1}')
 # Generate and save SHAP values for interpretability
 explainer = shap.TreeExplainer(final_model)
 shap_values = explainer.shap_values(X_test)
+
+shap_df = pd.DataFrame(shap_values, columns=x_cols)
+shap_df.insert(0, 'sample_id', test_df.index.values)
+shap_df.to_csv('output/lightgbm_shap.csv', index=False)
+
 plt.figure(figsize=(10, 6))
 shap.summary_plot(shap_values, X_test, show=False)
 plt.tight_layout()
