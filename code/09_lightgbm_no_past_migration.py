@@ -262,7 +262,6 @@ explainer = shap.TreeExplainer(final_model)
 shap_values = explainer.shap_values(X_test)
 
 shap_df = pd.DataFrame(shap_values, columns=x_cols)
-shap_df.insert(0, 'sample_id', test_df.index.values)
 shap_df.to_csv('output/lightgbm_nm_shap.csv', index=False)
 
 plt.figure(figsize=(10, 6))

@@ -164,6 +164,8 @@ final_model = lgb.train(best_params, d_combined, num_boost_round=best_model.best
 final_model.save_model('output/final_model1.txt')
 print("Final model saved to 'output/final_model1.txt'")
 
+#final_model = lgb.Booster(model_file='output/final_model1.txt')
+
 # Calculate feature importance
 importance_df = pd.DataFrame({
     'feature': x_cols,
@@ -239,7 +241,6 @@ explainer = shap.TreeExplainer(final_model)
 shap_values = explainer.shap_values(X_test)
 
 shap_df = pd.DataFrame(shap_values, columns=x_cols)
-shap_df.insert(0, 'sample_id', test_df.index.values)
 shap_df.to_csv('output/lightgbm_shap.csv', index=False)
 
 plt.figure(figsize=(10, 6))

@@ -129,7 +129,6 @@ explainer = shap.LinearExplainer(pipeline.named_steps['clf'], pipeline.named_ste
 shap_values = explainer.shap_values(X_test_imp)
 
 shap_df = pd.DataFrame(shap_values, columns=x_cols)
-shap_df.insert(0, 'sample_id', test_df.index.values)
 shap_df.to_csv('output/logistic_nm_shap.csv', index=False)
 
 plt.figure(figsize=(10,6))
