@@ -56,7 +56,7 @@ base = ['male','age','L1_hhchildren','L1_hhworkforce',
         'L1_ag','L1_nonag','L1_ag_inc','L1_asset_inc','L1_farmlab_inc','L1_liv_inc',
         'L1_nonag_inc','L1_plot_inc_renta_ag','L1_plot_inc_renta_nonag','L1_rec_inc','L1_trans_inc']
 
-x_cols = base + vill_cols + weather_cols
+x_cols = base + vill_cols
 
 y_col = 'work_us'
 
@@ -142,14 +142,14 @@ pd.DataFrame({
     'precision': prec_vals,
     'recall':    rec_vals,
     'threshold': np.append(thr, np.nan)
-}).to_csv(f'{out_dir}/lightgbm_nm1_w_precision_recall_curve.csv', index=False)
+}).to_csv(f'{out_dir}/lightgbm_nm1_precision_recall_curve.csv', index=False)
 
 plt.figure(figsize=(6,4))
 plt.plot(rec_vals, prec_vals, label=f'AUC={pr_auc:.2f}')
 plt.xlabel('Recall'); plt.ylabel('Precision')
 plt.title('PR Curve (2007 Test)'); plt.legend()
 plt.tight_layout()
-plt.savefig(f'{out_dir}/lightgbm_nm1_w_precision_recall_curve.png')
+plt.savefig(f'{out_dir}/lightgbm_nm1_precision_recall_curve.png')
 plt.close()
 
 # 8) FEATURE IMPORTANCE & CSV ---------------------------------------------------------------------
@@ -157,38 +157,38 @@ importance_df = pd.DataFrame({
     'feature':    x_cols,
     'importance': final_model.feature_importance(importance_type='gain')
 }).sort_values('importance', ascending=False)
-importance_df.to_csv(f'{out_dir}/lightgbm_nm1_w_feature_importance.csv', index=False)
+importance_df.to_csv(f'{out_dir}/lightgbm_nm1_feature_importance.csv', index=False)
 
 plt.figure(figsize=(12,6))
 sns.barplot(data=importance_df.head(20), x='importance', y='feature')
 plt.title('Top 20 Features (gain)'); plt.tight_layout()
-plt.savefig(f'{out_dir}/lightgbm_nm1_w_feature_importance.png')
+plt.savefig(f'{out_dir}/lightgbm_nm1_feature_importance.png')
 plt.close()
 
 # 9) SHAP VALUES & CSV ---------------------------------------------------------------------------
 explainer   = shap.TreeExplainer(final_model)
 shap_values = explainer.shap_values(X_test)
 shap_df     = pd.DataFrame(shap_values, columns=x_cols)
-shap_df.to_csv(f'{out_dir}/lightgbm_nm1_w_shap.csv', index=False)
+shap_df.to_csv(f'{out_dir}/lightgbm_nm1_shap.csv', index=False)
 
 plt.figure(figsize=(10,6))
 shap.summary_plot(shap_values, X_test, show=False)
 plt.title('SHAP summary (2007 Test)')
 plt.tight_layout()
-plt.savefig(f'{out_dir}/lightgbm_nm1_w_shap.png')
+plt.savefig(f'{out_dir}/lightgbm_nm1_shap.png')
 plt.close()
 
 # 10) FINAL TEST PREDICTIONS ----------------------------------------------------------------------
 out = test_data.copy()
 out['predicted_y']    = y_pred
 out['predicted_prob'] = y_prob
-out.to_csv(f'{out_dir}/test_nm1_w_predictions_2007.csv', index=False)
+out.to_csv(f'{out_dir}/test_nm1_predictions_2007.csv', index=False)
 
 # classification report & confusion matrix
 cr  = classification_report(y_test, y_pred, target_names=["No US","Worked US"])
 cm  = confusion_matrix(y_test, y_pred)
 
-with open(f'{out_dir}/lightgbm_nm1_w_report.txt','w') as f:
+with open(f'{out_dir}/lightgbm_nm1_report.txt','w') as f:
     f.write("Classification Report\n\n"+cr+"\nConfusion Matrix\n\n"+np.array2string(cm))
 
 plt.figure(figsize=(6,4))
@@ -196,7 +196,7 @@ sns.heatmap(pd.DataFrame(cm), annot=True, cmap="YlGnBu", fmt='g')
 plt.title('Confusion Matrix (2007 Test)')
 plt.ylabel('Actual'); plt.xlabel('Predicted')
 plt.tight_layout()
-plt.savefig(f'{out_dir}/lightgbm_nm1_w_confusion_matrix.png')
+plt.savefig(f'{out_dir}/lightgbm_nm1_confusion_matrix.png')
 plt.close()
 
 print("Single‐cohort analysis complete. All outputs saved.")

@@ -63,7 +63,7 @@ weather_seasonal = [
     'precip_tot_nonagseason','HDD_nonagseason','GDD_nonagseason'
 ]
 # Combine features
-x_cols1 = base_cols + spatial_cols
+x_cols1 = base_cols # NO WEATHER OR SPATIAL
 x_cols = x_cols1 + vill_cols
 
 y_col = 'work_us'
