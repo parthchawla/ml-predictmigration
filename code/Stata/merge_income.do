@@ -17,9 +17,10 @@ global output "output"
 
 use "$data/MexMigData.dta", clear
 
-gen survey = 1 if year <= 2002
-replace survey = 2 if year >= 2003 & year < 2008
-replace survey = 3 if year >= 2008
+gen survey = 1 if year <= 2003 // 2003 survey
+replace survey = 2 if year >= 2004 & year <= 2008 // 2008 survey
+replace survey = 3 if year > 2008
+mdesc survey
 
 merge m:1 numc survey using "$data/totalincome_panel.dta", ///
 keepusing(ag_inc asset_inc farmlab_inc liv_inc nonag_inc plot_inc_renta_ag ///
