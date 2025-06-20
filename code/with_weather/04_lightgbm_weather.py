@@ -39,26 +39,33 @@ gender_map = {'M':1,'m':1,'Male':1,'male':1,'F':0,'f':0,'Female':0,'female':0}
 df['male'] = df['male'].map(gender_map).astype(float)
 
 # Define feature columns (lagged, dummies, spatial, and weather)
-x_cols1 = [
-    'male', 'age',
-    'L1_hhchildren', 'L1_hhworkforce',
-    'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum',
-    'L1_hh_yrs_in_us_cum', 'L1_hh_migrant',
-    'L1_ag_inc', 'L1_asset_inc', 'L1_farmlab_inc', 'L1_liv_inc', 'L1_nonag_inc',
-    'L1_plot_inc_renta_ag', 'L1_plot_inc_renta_nonag', 'L1_rec_inc', 'L1_rem_mx', 'L1_rem_us', 'L1_trans_inc',
-    'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
-    # spatial & distance
-    'latitude_std', 'longitude_std', 'distkm_std', 'avtimeloc02_std', 'local_wage_std',
-    # weather: monthly lags
-    'avgtemp5', 'precip_tot5', 'GDD5', 'HDD5',
-    'avgtemp6', 'precip_tot6', 'GDD6', 'HDD6',
-    'avgtemp7', 'precip_tot7', 'GDD7', 'HDD7',
-    'avgtemp8', 'precip_tot8', 'GDD8', 'HDD8',
-    # weather: seasonal aggregates
-    'precip_tot_MDagseason', 'HDD_MDagseason', 'GDD_MDagseason',
-    'precip_tot_nonagseason', 'HDD_nonagseason', 'GDD_nonagseason'
+base_cols = [
+    'male','age',
+    'L1_hhchildren','L1_hhworkforce',
+    'L1_yrs_in_mx_cum','L1_yrs_in_us_cum','L1_yrs_in_ag_cum','L1_yrs_in_nonag_cum',
+    'L1_hh_yrs_in_us_cum','L1_hh_migrant',
+    'L1_ag_inc','L1_asset_inc','L1_farmlab_inc','L1_liv_inc','L1_nonag_inc',
+    'L1_plot_inc_renta_ag','L1_plot_inc_renta_nonag','L1_rec_inc','L1_rem_mx','L1_rem_us','L1_trans_inc',
+    'L1_work_us','L1_work_mx','L1_ag','L1_nonag'
 ]
+# Spatial & distance features
+spatial_cols = ['latitude_std','longitude_std','distkm_std','avtimeloc02_std','local_wage_std']
+# Weather: monthly lags
+weather_monthly = [
+    'avgtemp5','precip_tot5','GDD5','HDD5',
+    'avgtemp6','precip_tot6','GDD6','HDD6',
+    'avgtemp7','precip_tot7','GDD7','HDD7',
+    'avgtemp8','precip_tot8','GDD8','HDD8'
+]
+# Weather: seasonal aggregates
+weather_seasonal = [
+    'precip_tot_MDagseason','HDD_MDagseason','GDD_MDagseason',
+    'precip_tot_nonagseason','HDD_nonagseason','GDD_nonagseason'
+]
+# Combine features
+x_cols1 = base_cols + spatial_cols
 x_cols = x_cols1 + vill_cols
+
 y_col = 'work_us'
 
 # Define cohorts for 1980-2007
