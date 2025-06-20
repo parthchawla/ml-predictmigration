@@ -26,6 +26,13 @@ duplicates drop
 distinct year numc, joint
 tempfile missing_vars
 save `missing_vars'
+
+use "$data/MexMigData.dta", clear
+keep ind male
+duplicates drop
+rename ind indid
+tempfile male
+save `male'
 ********************************************************************************
 
 use "$data/LaborWeather_EJ_Main.dta", clear
@@ -37,6 +44,9 @@ replace survey = 3 if year > 2008
 mdesc survey
 
 merge m:1 year numc using `missing_vars'
+drop if _merge == 2
+drop _merge
+merge m:1 indid using `male'
 drop if _merge == 2
 drop _merge
 

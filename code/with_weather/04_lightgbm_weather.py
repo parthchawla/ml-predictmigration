@@ -1,7 +1,7 @@
 ####################################################################################################
-## Description: Machine learning program to predict migration in Mexico
+## Description: Machine learning program to predict migration in Mexico with weather & spatial data
 ## Author: Parth Chawla
-## Date: Nov, 2024
+## Date: Nov, 2024 (updated Jun 21, 2025)
 ####################################################################################################
 
 import os
@@ -9,269 +9,188 @@ import sys
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from sklearn.metrics import precision_score
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_score, precision_recall_fscore_support
 from sklearn import metrics
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 import random
 import shap
 
 # Set a random seed for reproducibility
 SEED = 42
-np.random.seed(SEED)   # Set seed for NumPy
-random.seed(SEED)      # Set seed for Python's random module
-lgb_params = {'seed': SEED}  # Use seed in LightGBM parameters
+np.random.seed(SEED)
+random.seed(SEED)
+lgb_params = {'seed': SEED}
 
+# Change working directory
 path = '/Users/parthchawla1/GitHub/ml-predictmigration/'
 os.chdir(path)
 
-df = pd.read_csv('data/data_cohort_analysis_add_vars.csv')
-vill_cols = [col for col in df if col.startswith('vill_')]
+# Create output directory for weather runs
+out_dir = 'output/with_weather'
+os.makedirs(out_dir, exist_ok=True)
 
-# Create x and y variables (most lagged to avoid leakage):
-x_cols1 = ['male', 'age', 'L1_hhchildren', 'L1_hhworkforce', 
-           'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum', 
-           'L1_yrs_in_mx_ag_sal_cum', 'L1_yrs_in_mx_nonag_sal_cum', 'L1_yrs_in_mx_ag_own_cum', 
-           'L1_yrs_in_mx_nonag_own_cum', 'L1_yrs_in_us_ag_sal_cum', 'L1_yrs_in_us_nonag_sal_cum', 
-           'L1_yrs_in_us_ag_own_cum', 'L1_yrs_in_us_nonag_own_cum',
-           'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
-           'L1_ag_inc', 'L1_asset_inc', 'L1_farmlab_inc', 'L1_liv_inc', 'L1_nonag_inc', 
-           'L1_plot_inc_renta_ag', 'L1_plot_inc_renta_nonag', 'L1_rec_inc', 
-           'L1_rem_mx', 'L1_rem_us', 'L1_trans_inc',
-           'L1_hh_yrs_in_us_cum', 'L1_hh_migrant']
+# Load prepared cohort data with weather & spatial features
+df = pd.read_csv('data/data_cohort_analysis_weather.csv')
+vill_cols = [col for col in df.columns if col.startswith('vill_')]
 
-# Assuming vill_cols is a list of village dummies already defined somewhere in your code
-x_cols = x_cols1 + vill_cols  # Final feature columns
-y_cols = ['work_us']  # Define the target column
+# Map gender to 0/1
+gender_map = {'M':1,'m':1,'Male':1,'male':1,'F':0,'f':0,'Female':0,'female':0}
+df['male'] = df['male'].map(gender_map).astype(float)
 
-# Define the cohorts for pre-periods and outcome periods
-pre_periods = ['1980-1984 Pre-Period', '1985-1989 Pre-Period', '1990-1994 Pre-Period', 
-               '1995-1999 Pre-Period', '2000-2004 Pre-Period', '2005-2010 Pre-Period']
-outcome_periods = ['1980-1984 Outcome Period', '1985-1989 Outcome Period', '1990-1994 Outcome Period', 
-                   '1995-1999 Outcome Period', '2000-2004 Outcome Period', '2005-2010 Outcome Period']
+# Define feature columns (lagged, dummies, spatial, and weather)
+x_cols1 = [
+    'male', 'age',
+    'L1_hhchildren', 'L1_hhworkforce',
+    'L1_yrs_in_mx_cum', 'L1_yrs_in_us_cum', 'L1_yrs_in_ag_cum', 'L1_yrs_in_nonag_cum',
+    'L1_hh_yrs_in_us_cum', 'L1_hh_migrant',
+    'L1_ag_inc', 'L1_asset_inc', 'L1_farmlab_inc', 'L1_liv_inc', 'L1_nonag_inc',
+    'L1_plot_inc_renta_ag', 'L1_plot_inc_renta_nonag', 'L1_rec_inc', 'L1_rem_mx', 'L1_rem_us', 'L1_trans_inc',
+    'L1_work_us', 'L1_work_mx', 'L1_ag', 'L1_nonag',
+    # spatial & distance
+    'latitude_std', 'longitude_std', 'distkm_std', 'avtimeloc02_std', 'local_wage_std',
+    # weather: monthly lags
+    'avgtemp5', 'precip_tot5', 'GDD5', 'HDD5',
+    'avgtemp6', 'precip_tot6', 'GDD6', 'HDD6',
+    'avgtemp7', 'precip_tot7', 'GDD7', 'HDD7',
+    'avgtemp8', 'precip_tot8', 'GDD8', 'HDD8',
+    # weather: seasonal aggregates
+    'precip_tot_MDagseason', 'HDD_MDagseason', 'GDD_MDagseason',
+    'precip_tot_nonagseason', 'HDD_nonagseason', 'GDD_nonagseason'
+]
+x_cols = x_cols1 + vill_cols
+y_col = 'work_us'
 
-# Initialize variables to store the best model and its parameters
+# Define cohorts for 1980-2007
+pre_periods = [
+    '1980-1984 Pre-Period','1985-1989 Pre-Period','1990-1994 Pre-Period',
+    '1995-1999 Pre-Period','2000-2004 Pre-Period','2003-2007 Pre-Period'
+]
+outcome_periods = [
+    '1980-1984 Outcome Period','1985-1989 Outcome Period','1990-1994 Outcome Period',
+    '1995-1999 Outcome Period','2000-2004 Outcome Period','2003-2007 Outcome Period'
+]
+
+# Calculate class imbalance weight
+pos_weight = len(df[df[y_col]==0]) / len(df[df[y_col]==1])
+
+# Hyperparameter search space
+param_space = {
+    'num_leaves': np.random.randint(20,150,100),
+    'min_data_in_leaf': np.random.randint(10,100,100),
+    'learning_rate': np.random.uniform(0.01,0.1,100),
+    'feature_fraction': np.random.uniform(0.5,1.0,100),
+    'bagging_fraction': np.random.uniform(0.5,1.0,100),
+}
+
+# Track best model
 best_precision = 0
 best_params = None
 best_model = None
 
-# Calculate the class imbalance ratio
-pos_weight = len(df[df['work_us'] == 0]) / len(df[df['work_us'] == 1])
-
-# Define the hyperparameter space for random search
-param_space = {
-    'num_leaves': np.random.randint(20, 150, size=100),  # Max number of leaves in one tree
-    'min_data_in_leaf': np.random.randint(10, 100, size=100),  # Min samples required in a leaf
-    'learning_rate': np.random.uniform(0.01, 0.1, size=100),  # Step size for each boosting step
-    'feature_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of features used per tree
-    'bagging_fraction': np.random.uniform(0.5, 1.0, size=100),  # Fraction of data used per iteration
-}
-
-# Map gender to 0/1:
-mapping = {
-    'M': 1, 'm': 1, 'Male': 1, 'male': 1,
-    'F': 0, 'f': 0, 'Female': 0, 'female': 0
-}
-df['male'] = df['male'].map(mapping)
-df['male'] = pd.to_numeric(df['male'], errors='coerce')
-
-# Print start of the process
-print("Starting the cohort-based training and validation process...")
-
-# Loop through each cohort (excluding the last one for testing)
+print("Starting cohort-based hyperparam search with weather & spatial features...")
 for i in range(len(pre_periods)):
-    # Define training data (from the pre-period of the current cohort)
-    print(f"\nProcessing cohort {pre_periods[i]} for training and {outcome_periods[i]} for validation...")
+    print(f"\nTraining on {pre_periods[i]}, validating on {outcome_periods[i]}...")
+    train_df = df[df['cohort']==pre_periods[i]]
+    val_df   = df[df['cohort']==outcome_periods[i]]
 
-    train_data = df[df['cohort'] == pre_periods[i]]
-    X_train = train_data[x_cols]  # Features
-    y_train = train_data[y_cols]  # Target
+    X_train = train_df[x_cols]
+    y_train = train_df[y_col]
+    X_val   = val_df[x_cols]
+    y_val   = val_df[y_col].fillna(0)
 
-    print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+    print(f" X_train: {X_train.shape}, X_val: {X_val.shape}")
 
-    # Define validation data (from the outcome period of the next cohort)
-    validate_data = df[df['cohort'] == outcome_periods[i]]
-    X_validate = validate_data[x_cols]  # Features
-    y_validate = validate_data[y_cols]  # Target
-
-    y_validate = y_validate.fillna(0)  # Fill NaNs with 0
-
-    print(f"X_validate shape: {X_validate.shape}, y_validate shape: {y_validate.shape}")
-
-    # Perform random search over 100 hyperparameter configurations
     for j in range(100):
-        if j % 10 == 0:  # Print progress every 10 iterations
-            print(f"Hyperparameter configuration {j+1}/100")
-
-        # Sample a unique set of hyperparameters
+        if j%10==0: print(f"  Hyperparam iter {j+1}/100")
         params = {
-            'objective': 'binary',  # Binary classification objective
-            'num_leaves': param_space['num_leaves'][j],
-            'min_data_in_leaf': param_space['min_data_in_leaf'][j],
-            'learning_rate': param_space['learning_rate'][j],
-            'feature_fraction': param_space['feature_fraction'][j],
-            'bagging_fraction': param_space['bagging_fraction'][j],
-            'metric': 'binary_logloss',  # Use log loss as the evaluation metric
-            'scale_pos_weight': pos_weight,  # Account for class imbalance
-            'verbose': -1,  # Suppress all LightGBM output
-            'seed': SEED  # Ensure consistent LightGBM results
+            'objective':'binary','metric':'binary_logloss','verbose':-1,
+            'scale_pos_weight':pos_weight,'seed':SEED,
+            'num_leaves':param_space['num_leaves'][j],
+            'min_data_in_leaf':param_space['min_data_in_leaf'][j],
+            'learning_rate':param_space['learning_rate'][j],
+            'feature_fraction':param_space['feature_fraction'][j],
+            'bagging_fraction':param_space['bagging_fraction'][j]
         }
-        
-        # Create LightGBM datasets for training and validation
-        d_train = lgb.Dataset(X_train, label=y_train)
-        d_validate = lgb.Dataset(X_validate, label=y_validate, reference=d_train)
-        
-        # Train the model with early stopping using a callback
-        model = lgb.train(
-            params,
-            d_train,
-            valid_sets=[d_validate],
-            num_boost_round=1000,  # Maximum number of boosting rounds
-            callbacks=[lgb.early_stopping(stopping_rounds=50)]  # Early stopping callback
-        )
-        
-        # Predict on the validation set and calculate precision
-        y_validate_pred = model.predict(X_validate, num_iteration=model.best_iteration)
-        precision = precision_score(y_validate, y_validate_pred.round())
-        
-        # Update the best model if the current one has higher precision
-        if precision > best_precision:
-            print(f"New best precision found: {precision:.4f} at configuration {j+1}")
-            best_precision = precision
+        dtrain = lgb.Dataset(X_train, label=y_train)
+        dval   = lgb.Dataset(X_val, label=y_val, reference=dtrain)
+        model = lgb.train(params, dtrain, valid_sets=[dval], num_boost_round=1000,
+                          callbacks=[lgb.early_stopping(stopping_rounds=50)])
+        preds = model.predict(X_val, num_iteration=model.best_iteration)
+        prec = precision_score(y_val, preds.round())
+        if prec>best_precision:
+            print(f"  New best precision {prec:.4f} at iter {j+1}")
+            best_precision = prec
             best_params = params
             best_model = model
 
-# Print the best hyperparameters and the corresponding precision
-print(f"\nBest Precision: {best_precision}")
-print(f"Best Parameters: {best_params}")
+print(f"\nBest precision: {best_precision:.4f}")
+print(f"Best params: {best_params}")
 
-# Final Training on the combined training and validation data using the best hyperparameters
-print("\nTraining the final model on the combined training and validation data...")
-final_train_data = df[df['cohort'].isin(pre_periods)]  # Combine all pre-periods (now includes up to 2005-2009)
-X_combined = final_train_data[x_cols]  # Features
-y_combined = final_train_data[y_cols]  # Target
+# Final training on all pre-periods
+print("\nRetraining final model on all pre-periods...")
+final_train = df[df['cohort'].isin(pre_periods)]
+X_comb = final_train[x_cols]
+y_comb = final_train[y_col]
+print(f" Final train shape: {X_comb.shape}")
+dtrain = lgb.Dataset(X_comb, label=y_comb)
+final_model = lgb.train(best_params, dtrain, num_boost_round=best_model.best_iteration)
 
-# Print cohorts included in X_combined and y_combined
-print(f"\nCohorts included in X_combined and y_combined: {final_train_data['cohort'].unique()}")
-print(f"X_combined shape: {X_combined.shape}, y_combined shape: {y_combined.shape}")
-
-# Create a dataset for final training
-d_combined = lgb.Dataset(X_combined, label=y_combined)
-final_model = lgb.train(best_params, d_combined, num_boost_round=best_model.best_iteration)
-
-# Save the final model to a file
-final_model.save_model('output/final_model1.txt')
-print("Final model saved to 'output/final_model1.txt'")
-
-#final_model = lgb.Booster(model_file='output/final_model1.txt')
-
-# Calculate feature importance
-importance_df = pd.DataFrame({
-    'feature': x_cols,
-    'importance': final_model.feature_importance(importance_type='gain')
-})
-importance_df = importance_df.sort_values('importance', ascending=False)
-importance_df.to_csv('output/lightgbm_feature_importance.csv', index=False)
-
-# Save feature importance plot
-plt.figure(figsize=(12, 6))
-sns.barplot(data=importance_df.head(20), x='importance', y='feature')
-plt.title('Top 20 Most Important Features')
+# Save model and importances
+final_model.save_model(f'{out_dir}/final_model1.txt')
+imp_df = pd.DataFrame({'feature':x_cols,'importance':final_model.feature_importance(importance_type='gain')})
+imp_df.sort_values('importance',ascending=False).to_csv(f'{out_dir}/lightgbm_feature_importance.csv',index=False)
+plt.figure(figsize=(12,6))
+sns.barplot(data=imp_df.head(20), x='importance', y='feature')
+plt.title('Top 20 Features')
 plt.tight_layout()
-plt.savefig('output/lightgbm_feature_importance.png')
+plt.savefig(f'{out_dir}/lightgbm_feature_importance.png')
 plt.close()
 
-# Evaluate the final model on the test cohort (last cohort's outcome period)
-print("\nEvaluating the final model on the test cohort...")
-test_data = df[df['cohort'] == outcome_periods[-1]]
-X_test = test_data[x_cols]  # Features
-y_test = test_data[y_cols]  # Target
+# Evaluate on final test cohort
+print("\nEvaluating on test cohort...")
+test_df = df[df['cohort']==outcome_periods[-1]]
+X_test = test_df[x_cols]
+y_test = test_df[y_col].fillna(0)
+print(f" Test cohort: {outcome_periods[-1]}, shape: {X_test.shape}")
 
-y_test = y_test.fillna(0)  # Fill NaNs with 0
+probs = final_model.predict(X_test)
+preds = (probs>0.5).astype(int)
 
-# Print cohorts included in X_test and y_test
-print(f"\nCohorts included in X_test and y_test: {test_data['cohort'].unique()}")
-print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-
-# Predict on the test set
-y_test_pred = final_model.predict(X_test)
-y_test_pred_binary = (y_test_pred > 0.5).astype(int)  # Convert predictions to binary (0 or 1)
-
-# ——— PR‐CURVE —————————————
+# Precision-recall curve
 from sklearn.metrics import precision_recall_curve, auc
-
-prec_vals, rec_vals, thresholds = precision_recall_curve(y_test, y_test_pred)
+prec_vals, rec_vals, thresh = precision_recall_curve(y_test, probs)
 pr_auc = auc(rec_vals, prec_vals)
+pd.DataFrame({'precision':prec_vals,'recall':rec_vals,'threshold':np.append(thresh,np.nan)}).to_csv(f'{out_dir}/lightgbm_precision_recall_curve.csv',index=False)
+plt.figure(figsize=(6,4))
+plt.plot(rec_vals,prec_vals,label=f'AUC={pr_auc:.2f}')
+plt.xlabel('Recall'); plt.ylabel('Precision'); plt.title('PR Curve'); plt.legend(); plt.tight_layout()
+plt.savefig(f'{out_dir}/lightgbm_precision_recall_curve.png'); plt.close()
 
-pr_df = pd.DataFrame({
-    'precision': prec_vals,
-    'recall':    rec_vals,
-    'threshold': np.append(thresholds, np.nan)
-})
-pr_df.to_csv('output/lightgbm_precision_recall_curve.csv', index=False)
+# Test predictions
+test_df['actual_y'] = y_test
+test_df['predicted_y'] = preds
+test_df['predicted_prob'] = probs
+test_df.to_csv(f'{out_dir}/test_predictions_2010.csv',index=False)
 
-plt.figure(figsize=(6, 4))
-plt.plot(rec_vals, prec_vals, label=f'PR Curve (AUC={pr_auc:.2f})')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision–Recall Curve')
-plt.legend()
-plt.tight_layout()
-plt.savefig('output/lightgbm_precision_recall_curve.png')
-plt.close()
-# ——————————————————————————
-
-# Add actual and predicted values to the test dataset
-test_data['actual_y'] = y_test.values  # Add the actual target values
-test_data['predicted_y'] = y_test_pred_binary  # Add the predicted binary values
-test_data['predicted_prob'] = y_test_pred  # Add the predicted probabilities
-test_data.to_csv('output/test_predictions_2010.csv', index=False)
-
-# Calculate precision, recall, and F1 score
-precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred_binary, average='binary')
-
-# Print the metrics
-print(f'Test Precision: {precision}')
-print(f'Test Recall: {recall}')
-print(f'Test F1 Score: {f1}')
-
-# Generate and save SHAP values for interpretability
+# Metrics and SHAP
+prec, rec, f1, _ = precision_recall_fscore_support(y_test, preds, average='binary')
+print(f"Test Precision: {prec:.3f}, Recall: {rec:.3f}, F1: {f1:.3f}")
 explainer = shap.TreeExplainer(final_model)
-shap_values = explainer.shap_values(X_test)
+shap_vals = explainer.shap_values(X_test)
+pd.DataFrame(shap_vals, columns=x_cols).to_csv(f'{out_dir}/lightgbm_shap.csv',index=False)
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_vals, X_test, show=False)
+plt.tight_layout(); plt.savefig(f'{out_dir}/lightgbm_shap.png'); plt.close()
 
-shap_df = pd.DataFrame(shap_values, columns=x_cols)
-shap_df.to_csv('output/lightgbm_shap.csv', index=False)
+# Classification report & confusion matrix
+report = metrics.classification_report(y_test, preds, target_names=["No","Yes"])
+cm = metrics.confusion_matrix(y_test, preds)
+with open(f'{out_dir}/lightgbm_report.txt','w') as f:
+    f.write('Classification Report\n\n'+report+"\nConfusion Matrix:\n"+np.array2string(cm))
 
-plt.figure(figsize=(10, 6))
-shap.summary_plot(shap_values, X_test, show=False)
-plt.tight_layout()
-plt.savefig('output/lightgbm_shap.png')
-plt.close()
-
-# Create classification report:
-target_names = ["Didn't work in the US", "Worked in the US"]
-cr = metrics.classification_report(y_test, y_test_pred_binary, target_names=target_names)
-
-# Create confusion matrix:
-cnf_matrix = metrics.confusion_matrix(y_test, y_test_pred_binary)
-
-# Write classification report and confusion matrix to txt:
-cm = np.array2string(cnf_matrix)
-with open('output/lightgbm_report.txt', 'w') as f:
-    f.write('Classification Report\n\n{}\n\nConfusion Matrix\n\n{}\n'.format(cr, cm))
-
-# Create heatmap for the confusion matrix:
-class_names = [0, 1]  # 0 for "Didn't work in the US", 1 for "Worked in the US"
+# Confusion matrix heatmap
 fig, ax = plt.subplots()
-tick_marks = np.arange(len(class_names))
-plt.xticks(tick_marks, class_names)
-plt.yticks(tick_marks, class_names)
-sns.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu", fmt='g')
-ax.xaxis.set_label_position("top")
-plt.tight_layout()
-plt.title('Confusion matrix', y=1.1)
-plt.ylabel('Actual')
-plt.xlabel('Predicted')
-plt.savefig('output/lightgbm_confusion_matrix.png', bbox_inches='tight')
-plt.show()
+sns.heatmap(cm, annot=True, fmt='g')
+ax.set_xlabel('Predicted'); ax.set_ylabel('Actual'); plt.title('Confusion Matrix')
+plt.tight_layout(); plt.savefig(f'{out_dir}/lightgbm_confusion_matrix.png'); plt.show()
