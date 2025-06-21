@@ -61,7 +61,7 @@ weather_seasonal = [
     'precip_tot_nonagseason','HDD_nonagseason','GDD_nonagseason'
 ]
 # Combine feature list
-x_cols = base_cols + spatial_cols + weather_monthly + weather_seasonal + vill_cols
+x_cols = base_cols + vill_cols # NO WEATHER OR SPATIAL
 y_col = 'work_us'
 
 # 4) ARDL-STYLE SPLIT (train on <2007, test =2007)
