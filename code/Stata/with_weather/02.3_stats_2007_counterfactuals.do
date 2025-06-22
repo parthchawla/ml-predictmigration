@@ -31,10 +31,10 @@ collapse (sum) ///
     pred_all_weather_plus_10pct
 
 label var pred_original               "No Shock"
-label var pred_temp_plus_10pct        "Avg. Temp +10%"
-label var pred_precip_plus_10pct      "Precipitation +10%"
-label var pred_gdd_plus_10pct         "Growing deg-days +10%"
-label var pred_hdd_plus_10pct         "Heating deg-days +10%"
+label var pred_temp_plus_10pct        "Avg Temp +10%"
+label var pred_precip_plus_10pct      "Precip +10%"
+label var pred_gdd_plus_10pct         "GDD +10%"
+label var pred_hdd_plus_10pct         "HDD +10%"
 label var pred_all_weather_plus_10pct "All weather vars +10%"
 
 graph hbar (asis) ///

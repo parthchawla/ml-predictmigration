@@ -54,19 +54,33 @@ hdd_cols    = [c for c in weather_cols if c.startswith('HDD')]
 
 all_weather_cols = temp_cols + precip_cols + gdd_cols + hdd_cols
 
+# define demographic & income groups for shocks
+demo_cols = ['age', 'L1_hhworkforce', 'L1_hhchildren']
+income_cols = [
+    'L1_ag_inc','L1_asset_inc','L1_farmlab_inc','L1_liv_inc',
+    'L1_nonag_inc','L1_plot_inc_renta_ag','L1_plot_inc_renta_nonag',
+    'L1_rec_inc','L1_trans_inc'
+]
+
 # 3) SIMULATE SCENARIOS & PREDICT ----------------------------------------------
 scenarios = {
-    'original':           1.00,
-    'temp_plus_10pct':    1.10,
-    'precip_plus_10pct':  1.10,
-    'gdd_plus_10pct':     1.10,
-    'hdd_plus_10pct':     1.10,
-    'all_weather_plus_10pct': 1.10
+    'original':                  1.00,
+    'temp_plus_10pct':           1.10,
+    'precip_plus_10pct':         1.10,
+    'gdd_plus_10pct':            1.10,
+    'hdd_plus_10pct':            1.10,
+    'all_weather_plus_10pct':    1.10,
+    'age_minus_10pct':           0.90,
+    'hhworkforce_minus_10pct':   0.90,
+    'hhchildren_minus_10pct':    0.90,
+    'income_minus_10pct':        0.90,
+    'demo_income_minus_10pct':   0.90
 }
 
 for name, factor in scenarios.items():
     X_mod = X_test.copy()
     
+    # weather shocks
     if name == 'temp_plus_10pct':
         X_mod[temp_cols] *= factor
     elif name == 'precip_plus_10pct':
@@ -77,11 +91,27 @@ for name, factor in scenarios.items():
         X_mod[hdd_cols] *= factor
     elif name == 'all_weather_plus_10pct':
         X_mod[all_weather_cols] *= factor
-    # else: original, do nothing
-
+    
+    # demographic shocks
+    elif name == 'age_minus_10pct':
+        X_mod[['age']] *= factor
+    elif name == 'hhworkforce_minus_10pct':
+        X_mod[['L1_hhworkforce']] *= factor
+    elif name == 'hhchildren_minus_10pct':
+        X_mod[['L1_hhchildren']] *= factor
+    
+    elif name == 'income_minus_10pct':
+        X_mod[income_cols] *= factor
+    
+    # combined demo + income shock
+    elif name == 'demo_income_minus_10pct':
+        X_mod[demo_cols + income_cols] *= factor
+    
+    # predict
     probs = model.predict(X_mod)
     preds = (probs > 0.5).astype(int)
     
+    # store results
     test_data[f'pred_prob_{name}'] = probs
     test_data[f'pred_{name}']      = preds
 
