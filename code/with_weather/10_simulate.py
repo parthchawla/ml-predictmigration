@@ -70,11 +70,15 @@ scenarios = {
     'gdd_plus_10pct':            1.10,
     'hdd_plus_10pct':            1.10,
     'all_weather_plus_10pct':    1.10,
-    'age_minus_10pct':           0.90,
+    'age_plus_10pct':            1.10,
     'hhworkforce_minus_10pct':   0.90,
     'hhchildren_minus_10pct':    0.90,
     'income_minus_10pct':        0.90,
-    'demo_income_minus_10pct':   0.90
+    'demo_income_minus_10pct':   0.90,
+    'age_plus_20pct':            1.20,
+    'hhworkforce_minus_20pct':   0.80,
+    'hhchildren_minus_20pct':    0.80,
+    'income_minus_20pct':        0.80
 }
 
 for name, factor in scenarios.items():
@@ -92,21 +96,28 @@ for name, factor in scenarios.items():
     elif name == 'all_weather_plus_10pct':
         X_mod[all_weather_cols] *= factor
     
-    # demographic shocks
-    elif name == 'age_minus_10pct':
+    # 10% demographic & income shocks
+    elif name == 'age_plus_10pct':
         X_mod[['age']] *= factor
     elif name == 'hhworkforce_minus_10pct':
         X_mod[['L1_hhworkforce']] *= factor
     elif name == 'hhchildren_minus_10pct':
         X_mod[['L1_hhchildren']] *= factor
-    
-    # income shocks
     elif name == 'income_minus_10pct':
         X_mod[income_cols] *= factor
-    
-    # combined demo + income shock
     elif name == 'demo_income_minus_10pct':
         X_mod[demo_cols + income_cols] *= factor
+
+    # 20% demographic shocks
+    elif name == 'age_plus_20pct':
+        X_mod[['age']] *= factor
+    elif name == 'hhworkforce_minus_20pct':
+        X_mod[['L1_hhworkforce']] *= factor
+    elif name == 'hhchildren_minus_20pct':
+        X_mod[['L1_hhchildren']] *= factor
+    # 20% income shock
+    elif name == 'income_minus_20pct':
+        X_mod[income_cols] *= factor
     
     # predict
     probs = model.predict(X_mod)
