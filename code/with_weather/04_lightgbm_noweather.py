@@ -178,7 +178,7 @@ plt.savefig(f'{out_dir}/lightgbm_precision_recall_curve.png'); plt.close()
 test_df['actual_y'] = y_test
 test_df['predicted_y'] = preds
 test_df['predicted_prob'] = probs
-test_df.to_csv(f'{out_dir}/test_predictions_2010.csv',index=False)
+test_df.to_csv(f'{out_dir}/test_predictions_2007.csv',index=False)
 
 # Metrics and SHAP
 prec, rec, f1, _ = precision_recall_fscore_support(y_test, preds, average='binary')
