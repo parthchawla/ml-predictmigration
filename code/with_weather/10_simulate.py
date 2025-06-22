@@ -100,6 +100,7 @@ for name, factor in scenarios.items():
     elif name == 'hhchildren_minus_10pct':
         X_mod[['L1_hhchildren']] *= factor
     
+    # income shocks
     elif name == 'income_minus_10pct':
         X_mod[income_cols] *= factor
     
