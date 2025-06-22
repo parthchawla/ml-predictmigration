@@ -126,6 +126,7 @@ print("Best params:", best_params)
 
 # 6) FINAL EVALUATION ON 2007 ----------------------------------------------------------------------
 final_model = best_model
+final_model.save_model(f'{out_dir}/final_model1_nm1_w.txt')
 
 # predictions
 y_prob   = final_model.predict(X_test)
