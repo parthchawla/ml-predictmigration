@@ -15,6 +15,14 @@ global data "data"
 global stats "stats"
 global output "output"
 
+use "$data/weatherdata.dta", clear
+sort village year distancekm
+by village year: keep if _n==1 // keep the closest weather station
+distinct village year, joint
+keep village year RENE-Ttemp_std
+tempfile new_weather
+save `new_weather'
+
 ********************************************************************************
 use "$data/MexMigData.dta", clear
 gen survey = 1 if year <= 2003 // 2003 survey
@@ -47,6 +55,10 @@ merge m:1 year numc using `missing_vars'
 drop if _merge == 2
 drop _merge
 merge m:1 indid using `male'
+drop if _merge == 2
+drop _merge
+
+merge m:1 village year using `new_weather'
 drop if _merge == 2
 drop _merge
 

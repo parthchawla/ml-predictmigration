@@ -99,7 +99,7 @@ for col in ['latitude', 'longitude', 'distkm', 'avtimeloc02', 'local_wage']:
 #-----------------------------------------------------------------------------------
 # Create cumulative history variables with one-year lag
 #-----------------------------------------------------------------------------------
-df['L1_yrs_in_mx_cum']   = df.groupby('ind')['work_in_mx'].cumsum().shift(1)
+df['L1_yrs_in_mx_cum']   = df.groupby('ind')['work_in_mx'].cumsum().shift(1) # check missing/zero
 df['L1_yrs_in_us_cum']   = df.groupby('ind')['work_us'].cumsum().shift(1)
 df['L1_yrs_in_ag_cum']   = df.groupby('ind')['ag'].cumsum().shift(1)
 df['L1_yrs_in_nonag_cum']= df.groupby('ind')['nonag'].cumsum().shift(1)
