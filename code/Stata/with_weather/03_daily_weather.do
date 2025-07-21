@@ -5,6 +5,7 @@
 */
 * ------------------------------------------------------------------------------
 
+cls
 clear all
 macro drop _all
 if inlist("`c(username)'","parthchawla1") global path ///
@@ -17,15 +18,18 @@ global output "output"
 
 use "$data/weatherdata.dta", clear
 sort village year distancekm
-// by village year: keep if _n==1 // keep the closest weather station
-// distinct village year, joint
+by village year: keep if _n==1 // keep the closest weather station
+distinct village year, joint
+distinct wsid year, joint
 keep wsid village year RENE-Ttemp_std
-tab wsid
 tempfile yw
 save `yw'
 
-import delimited "$data/TAB_DLY.CSV", clear varnames(1)
-tab elementcode
+cd "$data/daily"
+local files: dir . files "*DLY.dta"
+clear
+append using `files'
+cd "$path"
 
 /*
 | elementcode | Variable (daily)                     | Units |
@@ -55,14 +59,20 @@ forval i = 1/31 {
 	rename value`i' v`i'_e
 }
 
-reshape wide v*, i(year month stationid) j(elementcode)
+qui reshape wide v*, i(year month stationid) j(elementcode)
 
 foreach var of varlist v* {
 	rename `var' `var'_m
 }
 
-reshape wide v*, i(year stationid) j(month)
-distinct year stationid, joint
+qui reshape wide v*, i(year stationid) j(month)
 rename stationid wsid
-merge 1:m wsid year using `yw'
+distinct year wsid, joint
 
+distinct wsid year
+merge 1:m wsid year using `yw'
+keep if _merge==3
+drop _merge
+
+distinct wsid year village
+save "$data/daily_weather_all.dta", replace
