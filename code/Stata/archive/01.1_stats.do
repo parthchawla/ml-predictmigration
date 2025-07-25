@@ -13,46 +13,30 @@ if inlist("`c(username)'","parthchawla1") global path ///
 else global path ""
 cd "$path"
 global data "data"
-global stats "stats/with_weather"
-global output "output/with_weather"
+global stats "stats"
+global output "output"
 
-use "$data/MexMigData_merged_weather.dta", clear
-rename indid ind
-distinct ind
-distinct numc
-drop if work_us==.
+use "$data/MexMigData.dta", clear
 
 * No. of individuals who ever migrated
-preserve
-collapse (max) work_us, by(ind)
-collapse (sum) work_us
-list, table
-restore
+// collapse (max) work_us, by(ind)
+// collapse (sum) work_us
 
 * No. of households who ever had any migrating household member
-preserve
-collapse (max) work_us, by(numc)
-collapse (mean) work_us
-list, table
-restore
+// collapse (max) work_us, by(numc)
+// collapse (mean) work_us
 
 * Share of individuals migrating per year
-preserve
-collapse (count) total=work_us (sum) migrants=work_us (mean) share=work_us, by(year)
-list, table
-restore
+// collapse (count) total=work_us (sum) migrants=work_us (mean) share=work_us, by(year)
 
 * Share of households with at least one migrating member per year
-preserve
-collapse (max) work_us, by(year numc)
-collapse (mean) work_us, by(year)
-list, table
-restore
+// collapse (max) work_us, by(year numc)
+// collapse (mean) work_us, by(year)
 
-* No. of people in 2007 who had ever had any migrating household member
+* No. of people in 2010 who had ever had any migrating household member
 bysort numc (year): egen ever_migrant = max(work_us)
-gen hh_ever_migrant_2007 = ever_migrant if year == 2007
-tab hh_ever_migrant_2007
+gen hh_ever_migrant_2010 = ever_migrant if year == 2010
+tab hh_ever_migrant_2010
 drop ever_migrant
 
 *** IMP NOTE: Doing "gen" does running sum, "egen" sums over whole group
@@ -110,15 +94,15 @@ replace transition = "First Observed" if migrant_t1==.
 tab transition year, row
 //encode transition
 
-// * 1. Share working in the US over time
-// preserve
-//     collapse (mean) work_us, by(year)
-//     twoway (connected work_us year), ///
-//         title("Share of Sample in the US Over Time", size(medium)) ///
-//         yla(0(0.02)0.12,labs(small)) xla(1980(5)2007, labs(small)) ///
-//         ytitle("Share in the US", size(small)) xtitle("")    
-//     graph export "$stats/migration_trend.png", replace
-// restore
+* 1. Share working in the US over time
+preserve
+    collapse (mean) work_us, by(year)
+    twoway (connected work_us year), ///
+        title("Share of Sample in the US Over Time", size(medium)) ///
+        yla(0(0.02)0.12,labs(small)) xla(1980(10)2010, labs(small)) ///
+        ytitle("Share in the US", size(small)) xtitle("")    
+    graph export "$stats/migration_trend.png", replace
+restore
 
 * 2. Stacked bar chart of transition types by year
     * Calculate shares of each transition type
@@ -135,7 +119,7 @@ preserve
 
     * Create stacked bar graph
 	graph hbar (asis) share, name(g1) ///
-		over(transition,label(labs(small)) sort(order)) over(year,label(labs(small))) ///
+		over(transition,label(labs(vsmall)) sort(order)) over(year,label(labs(vsmall))) ///
 		title("Transitions", size(medium)) intensity(70) ///
 		ytitle("Share of Sample", size(small)) ///
 		b1title(,size(small)) yla(,labs(small)) stack asyvars ///
@@ -157,7 +141,7 @@ restore
 
     * Create stacked bar graph
 	graph hbar (asis) share, name(g2) ///
-		over(migrant_type,label(labs(small)) sort(order)) over(year,label(labs(small))) ///
+		over(migrant_type,label(labs(vsmall)) sort(order)) over(year,label(labs(vsmall))) ///
 		title("Types", size(medium)) intensity(70) ///
 		ytitle("Share of Sample", size(small)) ///
 		b1title(,size(small)) yla(,labs(small)) stack asyvars ///
@@ -165,7 +149,7 @@ restore
 		bar(1,color(orange_red)) bar(2,color(dkorange)) ///
 		bar(3,color(eltblue)) bar(4,color(orange))
 
-qui graph combine g2 g1, ///
+graph combine g2 g1, ///
 title("Share of Migrant Types and Transitions Over Time", size(medium)) ///
 note("Long-term Migrant: More than 10 years observed in the US; Medium-term Migrant: 4 to 10 years observed in the US; Short-term Migrant: 1 to 3 years observed in the US.",size(vsmall))
-graph export "$stats/migration_shares.eps", replace preview(on)
+graph export "$stats/migration_shares.png", replace
