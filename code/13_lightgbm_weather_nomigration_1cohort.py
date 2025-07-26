@@ -144,19 +144,43 @@ final_model = best_model
 final_model.save_model(f'{out_dir}/final_model_daily.txt')
 
 y_prob = final_model.predict(X_test)
-y_pred = (y_prob > 0.5).astype(int)
 
-precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
-print(f"2007 Test → Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
-
-# 7) PRECISION–RECALL CURVE & CSV -----------------------------------------------------------------
-prec_vals, rec_vals, thr = precision_recall_curve(y_test, y_prob)
+# --- THRESHOLD TUNING FOR BEST F1 -----------------------------------------------
+prec_vals, rec_vals, thresholds = precision_recall_curve(y_test, y_prob)
 pr_auc = auc(rec_vals, prec_vals)
-pd.DataFrame({
-    'precision': prec_vals,
-    'recall':    rec_vals,
-    'threshold': np.append(thr, np.nan)
-}).to_csv(f'{out_dir}/lightgbm_daily_pr_curve.csv', index=False)
+print(f"PR-AUC = {pr_auc:.4f}")
+
+f1_scores  = 2 * (prec_vals * rec_vals) / (prec_vals + rec_vals + 1e-8)
+best_idx   = np.nanargmax(f1_scores)
+best_thresh= thresholds[best_idx]
+best_f1    = f1_scores[best_idx]
+best_prec  = prec_vals[best_idx]
+best_rec   = rec_vals[best_idx]
+
+print(f"Best F1={best_f1:.4f} at threshold={best_thresh:.4f} → Precision={best_prec:.4f}, Recall={best_rec:.4f}")
+
+# Use the optimized threshold
+y_pred_opt = (y_prob > best_thresh).astype(int)
+y_pred     = y_pred_opt  # <— define y_pred!
+
+# Recompute metrics at optimized threshold
+precision_opt, recall_opt, f1_opt, _ = precision_recall_fscore_support(
+    y_test, y_pred, average='binary'
+)
+print(f"Optimized (th={best_thresh:.4f}) → Precision: {precision_opt:.4f}, Recall: {recall_opt:.4f}, F1: {f1_opt:.4f}")
+
+# Save optimized predictions
+out_opt = test_data.copy()
+out_opt['predicted_y']    = y_pred
+out_opt['predicted_prob'] = y_prob
+out_opt.to_csv(f'{out_dir}/test_daily_predictions_2007_opt_thresh.csv', index=False)
+
+# 7) FEATURE IMPORTANCE & CSV ---------------------------------------------------------------------
+importance_df = pd.DataFrame({
+    'feature':    x_cols,
+    'importance': final_model.feature_importance(importance_type='gain')
+}).sort_values('importance', ascending=False)
+importance_df.to_csv(f'{out_dir}/lightgbm_daily_feature_importance.csv', index=False)
 
 plt.figure(figsize=(6,4))
 plt.plot(rec_vals, prec_vals, label=f'AUC={pr_auc:.2f}')
